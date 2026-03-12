@@ -1,0 +1,62 @@
+/**
+ * 3task Calendar - Gutenberg Block Editor Styles
+ */
+
+.threecal-block-preview {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    overflow: hidden;
+    min-height: 200px;
+}
+
+.threecal-block-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 20px;
+    background: rgba(0, 0, 0, 0.1);
+    color: #fff;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.threecal-block-header .dashicons {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+}
+
+.threecal-block-theme {
+    margin-left: auto;
+    opacity: 0.8;
+    font-weight: 400;
+    text-transform: capitalize;
+}
+
+.threecal-block-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: rgba(255, 255, 255, 0.9);
+    text-align: center;
+}
+
+.threecal-block-placeholder p {
+    margin: 0 0 8px;
+    font-size: 16px;
+}
+
+.threecal-block-placeholder small {
+    opacity: 0.7;
+}
+
+/* Inspector Controls */
+.wp-block[data-type="3task-calendar/calendar"] .components-panel__body-title {
+    font-weight: 600;
+}
+
+.wp-block[data-type="3task-calendar/calendar"] .components-select-control__input {
+    border-radius: 6px;
+}

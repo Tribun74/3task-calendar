@@ -1,0 +1,1245 @@
+/**
+ * 3task Calendar - Frontend Styles
+ * 5 Themes: Default, Minimal, Gradient, Glassmorphism, Boxed
+ */
+
+/* ==========================================================================
+   CSS Variables
+   ========================================================================== */
+:root {
+    --threecal-primary: #6366f1;
+    --threecal-primary-light: #818cf8;
+    --threecal-primary-dark: #4f46e5;
+    --threecal-secondary: #ec4899;
+    --threecal-accent: #06b6d4;
+
+    --threecal-text: #1f2937;
+    --threecal-text-light: #6b7280;
+    --threecal-text-muted: #9ca3af;
+
+    --threecal-bg: #ffffff;
+    --threecal-bg-alt: #f9fafb;
+    --threecal-border: #e5e7eb;
+
+    --threecal-success: #10b981;
+    --threecal-warning: #f59e0b;
+    --threecal-danger: #ef4444;
+
+    --threecal-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --threecal-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --threecal-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --threecal-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+    --threecal-radius: 12px;
+    --threecal-radius-sm: 8px;
+    --threecal-radius-lg: 16px;
+    --threecal-radius-full: 9999px;
+
+    --threecal-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --threecal-transition-fast: all 0.15s ease;
+}
+
+/* ==========================================================================
+   Base Calendar Wrapper
+   ========================================================================== */
+.threecal-wrapper {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.5;
+    color: var(--threecal-text);
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.threecal-wrapper * {
+    box-sizing: border-box;
+}
+
+/* ==========================================================================
+   Filters Bar
+   ========================================================================== */
+.threecal-filters {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.threecal-category-filter {
+    padding: 10px 16px;
+    border: 2px solid var(--threecal-border);
+    border-radius: var(--threecal-radius-sm);
+    font-size: 14px;
+    color: var(--threecal-text);
+    background: var(--threecal-bg);
+    cursor: pointer;
+    transition: var(--threecal-transition);
+    min-width: 180px;
+}
+
+.threecal-category-filter:hover,
+.threecal-category-filter:focus {
+    border-color: var(--threecal-primary);
+    outline: none;
+}
+
+.threecal-view-switcher {
+    display: flex;
+    gap: 4px;
+    background: var(--threecal-bg-alt);
+    padding: 4px;
+    border-radius: var(--threecal-radius-sm);
+}
+
+.threecal-view-btn {
+    padding: 8px 16px;
+    border: none;
+    background: transparent;
+    color: var(--threecal-text-light);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: var(--threecal-transition);
+}
+
+.threecal-view-btn:hover {
+    color: var(--threecal-text);
+}
+
+.threecal-view-btn.active {
+    background: var(--threecal-bg);
+    color: var(--threecal-primary);
+    box-shadow: var(--threecal-shadow-sm);
+}
+
+/* ==========================================================================
+   Calendar Header
+   ========================================================================== */
+.threecal-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding: 16px;
+    background: var(--threecal-bg);
+    border-radius: var(--threecal-radius);
+    box-shadow: var(--threecal-shadow-sm);
+}
+
+.threecal-nav {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: var(--threecal-bg-alt);
+    color: var(--threecal-text);
+    border-radius: var(--threecal-radius-sm);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--threecal-transition);
+}
+
+.threecal-nav:hover {
+    background: var(--threecal-primary);
+    color: #fff;
+    transform: scale(1.05);
+}
+
+.threecal-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--threecal-text);
+    margin: 0;
+    min-width: 200px;
+    text-align: center;
+}
+
+.threecal-today {
+    padding: 8px 20px;
+    border: 2px solid var(--threecal-primary);
+    background: transparent;
+    color: var(--threecal-primary);
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: var(--threecal-radius-full);
+    cursor: pointer;
+    transition: var(--threecal-transition);
+}
+
+.threecal-today:hover {
+    background: var(--threecal-primary);
+    color: #fff;
+}
+
+/* ==========================================================================
+   Month Grid
+   ========================================================================== */
+.threecal-month-grid {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 4px;
+    background: transparent;
+}
+
+.threecal-month-grid th {
+    padding: 12px 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--threecal-text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: center;
+}
+
+.threecal-month-grid td {
+    background: var(--threecal-bg);
+    vertical-align: top;
+    height: 100px;
+    padding: 0;
+    border-radius: var(--threecal-radius-sm);
+    transition: var(--threecal-transition);
+    box-shadow: var(--threecal-shadow-sm);
+}
+
+.threecal-month-grid td:hover:not(.threecal-day-empty) {
+    box-shadow: var(--threecal-shadow);
+    transform: translateY(-2px);
+}
+
+.threecal-day-empty {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+/* ==========================================================================
+   Day Cell
+   ========================================================================== */
+.threecal-day-header {
+    padding: 8px 10px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.threecal-day-number {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--threecal-text);
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--threecal-radius-full);
+    transition: var(--threecal-transition);
+}
+
+.threecal-day.threecal-today .threecal-day-number {
+    background: var(--threecal-primary);
+    color: #fff;
+}
+
+.threecal-day-events {
+    padding: 4px 8px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.threecal-event-dot {
+    display: block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #fff;
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: var(--threecal-transition);
+}
+
+.threecal-event-dot:hover {
+    transform: scale(1.02);
+    box-shadow: var(--threecal-shadow-sm);
+}
+
+.threecal-event-title {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.threecal-more-events {
+    display: block;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--threecal-text-light);
+    text-decoration: none;
+    transition: var(--threecal-transition);
+}
+
+.threecal-more-events:hover {
+    color: var(--threecal-primary);
+}
+
+/* ==========================================================================
+   Legend
+   ========================================================================== */
+.threecal-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 16px;
+    margin-top: 20px;
+    background: var(--threecal-bg-alt);
+    border-radius: var(--threecal-radius);
+}
+
+.threecal-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--threecal-text-light);
+}
+
+.threecal-legend-color {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+}
+
+/* ==========================================================================
+   Modal
+   ========================================================================== */
+.threecal-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    visibility: hidden;
+    transition: var(--threecal-transition);
+}
+
+.threecal-modal.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.threecal-modal-content {
+    background: var(--threecal-bg);
+    border-radius: var(--threecal-radius-lg);
+    box-shadow: var(--threecal-shadow-xl);
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    transform: scale(0.9) translateY(20px);
+    transition: var(--threecal-transition);
+}
+
+.threecal-modal.active .threecal-modal-content {
+    transform: scale(1) translateY(0);
+}
+
+.threecal-modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: var(--threecal-bg-alt);
+    color: var(--threecal-text);
+    font-size: 24px;
+    border-radius: var(--threecal-radius-full);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--threecal-transition);
+    z-index: 10;
+}
+
+.threecal-modal-close:hover {
+    background: var(--threecal-danger);
+    color: #fff;
+}
+
+.threecal-modal-body {
+    padding: 24px;
+}
+
+/* Event Modal Content */
+.threecal-modal-event-image {
+    margin: -24px -24px 20px;
+    border-radius: var(--threecal-radius-lg) var(--threecal-radius-lg) 0 0;
+    overflow: hidden;
+}
+
+.threecal-modal-event-image img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.threecal-modal-event-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 16px;
+    color: var(--threecal-text);
+}
+
+.threecal-modal-event-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.threecal-modal-category-tag {
+    padding: 4px 12px;
+    border-radius: var(--threecal-radius-full);
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.threecal-modal-event-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 16px;
+    background: var(--threecal-bg-alt);
+    border-radius: var(--threecal-radius);
+}
+
+.threecal-modal-meta-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 14px;
+}
+
+.threecal-modal-meta-item .dashicons {
+    color: var(--threecal-primary);
+    flex-shrink: 0;
+}
+
+.threecal-modal-event-description {
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--threecal-text);
+}
+
+.threecal-modal-event-url {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 20px;
+    padding: 12px 24px;
+    background: var(--threecal-primary);
+    color: #fff;
+    text-decoration: none;
+    border-radius: var(--threecal-radius);
+    font-weight: 600;
+    transition: var(--threecal-transition);
+}
+
+.threecal-modal-event-url:hover {
+    background: var(--threecal-primary-dark);
+    transform: translateY(-2px);
+}
+
+/* ==========================================================================
+   Event List
+   ========================================================================== */
+.threecal-event-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.threecal-event-list.threecal-view-grid .threecal-grid {
+    display: grid;
+    gap: 20px;
+}
+
+.threecal-grid-2 { grid-template-columns: repeat(2, 1fr); }
+.threecal-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.threecal-grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+.threecal-event-card {
+    background: var(--threecal-bg);
+    border-radius: var(--threecal-radius);
+    box-shadow: var(--threecal-shadow);
+    overflow: hidden;
+    transition: var(--threecal-transition);
+}
+
+.threecal-event-card:hover {
+    box-shadow: var(--threecal-shadow-lg);
+    transform: translateY(-4px);
+}
+
+.threecal-event-image img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+}
+
+.threecal-event-content {
+    padding: 20px;
+}
+
+.threecal-event-card .threecal-event-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 12px;
+}
+
+.threecal-event-card .threecal-event-title a {
+    color: var(--threecal-text);
+    text-decoration: none;
+}
+
+.threecal-event-card .threecal-event-title a:hover {
+    color: var(--threecal-primary);
+}
+
+.threecal-event-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--threecal-text-light);
+}
+
+.threecal-event-meta .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+    color: var(--threecal-primary);
+}
+
+.threecal-event-excerpt {
+    margin-top: 12px;
+    font-size: 14px;
+    color: var(--threecal-text-light);
+    line-height: 1.6;
+}
+
+/* ==========================================================================
+   Upcoming Widget
+   ========================================================================== */
+.threecal-upcoming {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.threecal-upcoming-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--threecal-bg);
+    border-radius: var(--threecal-radius-sm);
+    box-shadow: var(--threecal-shadow-sm);
+    transition: var(--threecal-transition);
+}
+
+.threecal-upcoming-item:hover {
+    box-shadow: var(--threecal-shadow);
+}
+
+.threecal-upcoming-color {
+    width: 6px;
+    height: 100%;
+    min-height: 40px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.threecal-upcoming-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.threecal-upcoming-title {
+    font-weight: 600;
+    color: var(--threecal-text);
+}
+
+.threecal-upcoming-date,
+.threecal-upcoming-time,
+.threecal-upcoming-location {
+    font-size: 13px;
+    color: var(--threecal-text-light);
+}
+
+/* ==========================================================================
+   Single Event
+   ========================================================================== */
+.threecal-single-event {
+    background: var(--threecal-bg);
+    border-radius: var(--threecal-radius-lg);
+    box-shadow: var(--threecal-shadow);
+    overflow: hidden;
+}
+
+.threecal-event-featured-image img {
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+}
+
+.threecal-event-header {
+    padding: 24px;
+    border-bottom: 1px solid var(--threecal-border);
+}
+
+.threecal-single-event .threecal-event-title {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 16px;
+}
+
+.threecal-event-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.threecal-category-tag {
+    padding: 4px 12px;
+    border-radius: var(--threecal-radius-full);
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.threecal-event-details {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: var(--threecal-bg-alt);
+}
+
+.threecal-detail-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.threecal-detail-row .dashicons {
+    color: var(--threecal-primary);
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.threecal-event-description {
+    padding: 24px;
+    font-size: 16px;
+    line-height: 1.8;
+}
+
+.threecal-event-map {
+    height: 300px;
+    background: var(--threecal-bg-alt);
+}
+
+/* ==========================================================================
+   Pagination
+   ========================================================================== */
+.threecal-nav-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--threecal-border);
+}
+
+.threecal-nav-pagination a,
+.threecal-nav-pagination span {
+    padding: 8px 14px;
+    border-radius: var(--threecal-radius-sm);
+    text-decoration: none;
+    font-size: 14px;
+    transition: var(--threecal-transition);
+}
+
+.threecal-nav-pagination a {
+    color: var(--threecal-text);
+    background: var(--threecal-bg-alt);
+}
+
+.threecal-nav-pagination a:hover {
+    background: var(--threecal-primary);
+    color: #fff;
+}
+
+.threecal-page-current {
+    background: var(--threecal-primary);
+    color: #fff;
+}
+
+/* ==========================================================================
+   No Events
+   ========================================================================== */
+.threecal-no-events {
+    text-align: center;
+    padding: 48px;
+    color: var(--threecal-text-light);
+    font-size: 16px;
+}
+
+/* ==========================================================================
+   Loading State
+   ========================================================================== */
+.threecal-loading {
+    position: relative;
+    min-height: 200px;
+}
+
+.threecal-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    margin: -20px 0 0 -20px;
+    border: 3px solid var(--threecal-border);
+    border-top-color: var(--threecal-primary);
+    border-radius: 50%;
+    animation: threecal-spin 0.8s linear infinite;
+}
+
+@keyframes threecal-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ==========================================================================
+   THEME: Minimal
+   ========================================================================== */
+.threecal-theme-minimal .threecal-header {
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+    margin-bottom: 24px;
+}
+
+.threecal-theme-minimal .threecal-month-grid td {
+    background: transparent;
+    box-shadow: none;
+    border: 1px solid var(--threecal-border);
+    border-radius: 0;
+}
+
+.threecal-theme-minimal .threecal-month-grid td:hover:not(.threecal-day-empty) {
+    transform: none;
+    background: var(--threecal-bg-alt);
+}
+
+.threecal-theme-minimal .threecal-event-dot {
+    background: transparent !important;
+    color: var(--threecal-text);
+    border-left: 3px solid;
+    border-radius: 0;
+    padding-left: 8px;
+}
+
+.threecal-theme-minimal .threecal-legend {
+    background: transparent;
+    padding: 0;
+}
+
+/* ==========================================================================
+   THEME: Gradient
+   ========================================================================== */
+.threecal-theme-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 24px;
+    border-radius: var(--threecal-radius-lg);
+}
+
+.threecal-theme-gradient .threecal-filters,
+.threecal-theme-gradient .threecal-header {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.threecal-theme-gradient .threecal-title,
+.threecal-theme-gradient .threecal-month-grid th {
+    color: #fff;
+}
+
+.threecal-theme-gradient .threecal-nav {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+.threecal-theme-gradient .threecal-nav:hover {
+    background: #fff;
+    color: var(--threecal-primary);
+}
+
+.threecal-theme-gradient .threecal-today {
+    border-color: #fff;
+    color: #fff;
+}
+
+.threecal-theme-gradient .threecal-today:hover {
+    background: #fff;
+    color: var(--threecal-primary);
+}
+
+.threecal-theme-gradient .threecal-month-grid td {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.threecal-theme-gradient .threecal-day.threecal-today .threecal-day-number {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.threecal-theme-gradient .threecal-legend {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+}
+
+.threecal-theme-gradient .threecal-legend-label {
+    color: #fff;
+}
+
+/* ==========================================================================
+   THEME: Glassmorphism
+   ========================================================================== */
+.threecal-theme-glassmorphism {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    padding: 24px;
+    border-radius: var(--threecal-radius-lg);
+}
+
+.threecal-theme-glassmorphism .threecal-filters,
+.threecal-theme-glassmorphism .threecal-header {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.threecal-theme-glassmorphism .threecal-category-filter {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+.threecal-theme-glassmorphism .threecal-category-filter option {
+    background: #1a1a2e;
+    color: #fff;
+}
+
+.threecal-theme-glassmorphism .threecal-view-switcher {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.threecal-theme-glassmorphism .threecal-view-btn {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.threecal-theme-glassmorphism .threecal-view-btn.active {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+.threecal-theme-glassmorphism .threecal-title,
+.threecal-theme-glassmorphism .threecal-month-grid th {
+    color: #fff;
+}
+
+.threecal-theme-glassmorphism .threecal-nav {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.threecal-theme-glassmorphism .threecal-nav:hover {
+    background: rgba(99, 102, 241, 0.5);
+}
+
+.threecal-theme-glassmorphism .threecal-today {
+    border-color: rgba(255, 255, 255, 0.5);
+    color: #fff;
+}
+
+.threecal-theme-glassmorphism .threecal-today:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.threecal-theme-glassmorphism .threecal-month-grid td {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.threecal-theme-glassmorphism .threecal-month-grid td:hover:not(.threecal-day-empty) {
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.threecal-theme-glassmorphism .threecal-day-number {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.threecal-theme-glassmorphism .threecal-day.threecal-today .threecal-day-number {
+    background: linear-gradient(135deg, #6366f1 0%, #ec4899 100%);
+}
+
+.threecal-theme-glassmorphism .threecal-more-events {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.threecal-theme-glassmorphism .threecal-legend {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.threecal-theme-glassmorphism .threecal-legend-label {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.threecal-theme-glassmorphism .threecal-modal-content {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.threecal-theme-glassmorphism .threecal-modal-event-title,
+.threecal-theme-glassmorphism .threecal-modal-event-description {
+    color: #fff;
+}
+
+.threecal-theme-glassmorphism .threecal-modal-event-meta {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.threecal-theme-glassmorphism .threecal-modal-meta-item {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.threecal-theme-glassmorphism .threecal-modal-close {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+/* ==========================================================================
+   THEME: Boxed
+   ========================================================================== */
+.threecal-theme-boxed .threecal-header {
+    background: var(--threecal-primary);
+    color: #fff;
+    border-radius: var(--threecal-radius) var(--threecal-radius) 0 0;
+}
+
+.threecal-theme-boxed .threecal-title {
+    color: #fff;
+}
+
+.threecal-theme-boxed .threecal-nav {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+.threecal-theme-boxed .threecal-nav:hover {
+    background: #fff;
+    color: var(--threecal-primary);
+}
+
+.threecal-theme-boxed .threecal-today {
+    border-color: #fff;
+    color: #fff;
+}
+
+.threecal-theme-boxed .threecal-today:hover {
+    background: #fff;
+    color: var(--threecal-primary);
+}
+
+.threecal-theme-boxed .threecal-calendar {
+    border: 2px solid var(--threecal-primary);
+    border-top: none;
+    border-radius: 0 0 var(--threecal-radius) var(--threecal-radius);
+    padding: 16px;
+    background: var(--threecal-bg);
+}
+
+.threecal-theme-boxed .threecal-month-grid {
+    border-spacing: 0;
+}
+
+.threecal-theme-boxed .threecal-month-grid td {
+    border-radius: 0;
+    border: 1px solid var(--threecal-border);
+}
+
+.threecal-theme-boxed .threecal-legend {
+    border: 2px solid var(--threecal-border);
+    border-top: none;
+}
+
+/* ==========================================================================
+   Responsive Design
+   ========================================================================== */
+@media (max-width: 768px) {
+    .threecal-filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .threecal-category-filter {
+        min-width: 100%;
+    }
+
+    .threecal-header {
+        flex-wrap: wrap;
+    }
+
+    .threecal-title {
+        order: -1;
+        width: 100%;
+        margin-bottom: 12px;
+    }
+
+    .threecal-month-grid td {
+        height: 80px;
+    }
+
+    .threecal-event-title {
+        display: none;
+    }
+
+    .threecal-event-dot {
+        width: 8px;
+        height: 8px;
+        padding: 0;
+        border-radius: 50%;
+    }
+
+    .threecal-day-events {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .threecal-grid-2,
+    .threecal-grid-3,
+    .threecal-grid-4 {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .threecal-month-grid th {
+        font-size: 11px;
+        padding: 8px 4px;
+    }
+
+    .threecal-month-grid td {
+        height: 60px;
+    }
+
+    .threecal-day-header {
+        padding: 4px;
+    }
+
+    .threecal-day-number {
+        font-size: 12px;
+        width: 24px;
+        height: 24px;
+    }
+}
+
+/* ==========================================================================
+   Animations
+   ========================================================================== */
+@keyframes threecal-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.threecal-wrapper {
+    animation: threecal-fade-in 0.5s ease-out;
+}
+
+.threecal-event-card {
+    animation: threecal-fade-in 0.4s ease-out;
+    animation-fill-mode: both;
+}
+
+.threecal-event-card:nth-child(1) { animation-delay: 0.1s; }
+.threecal-event-card:nth-child(2) { animation-delay: 0.15s; }
+.threecal-event-card:nth-child(3) { animation-delay: 0.2s; }
+.threecal-event-card:nth-child(4) { animation-delay: 0.25s; }
+.threecal-event-card:nth-child(5) { animation-delay: 0.3s; }
+
+/* ==========================================================================
+   List View (Calendar View Switcher)
+   ========================================================================== */
+.threecal-list-view {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.threecal-list-day {
+    background: var(--threecal-bg);
+    border-radius: var(--threecal-radius-sm);
+    margin-bottom: 12px;
+    overflow: hidden;
+    box-shadow: var(--threecal-shadow-sm);
+}
+
+.threecal-list-day-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--threecal-bg-alt);
+    border-bottom: 1px solid var(--threecal-border);
+}
+
+.threecal-list-day-name {
+    font-weight: 600;
+    color: var(--threecal-text);
+    font-size: 14px;
+}
+
+.threecal-list-day-date {
+    font-size: 13px;
+    color: var(--threecal-text-light);
+}
+
+.threecal-list-event {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--threecal-border);
+    cursor: pointer;
+    transition: var(--threecal-transition);
+}
+
+.threecal-list-event:last-child {
+    border-bottom: none;
+}
+
+.threecal-list-event:hover {
+    background: var(--threecal-bg-alt);
+}
+
+.threecal-list-event-color {
+    width: 4px;
+    height: 36px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.threecal-list-event-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.threecal-list-event-title {
+    font-weight: 600;
+    color: var(--threecal-text);
+    font-size: 15px;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.threecal-list-event-time {
+    font-size: 13px;
+    color: var(--threecal-text-light);
+}
+
+.threecal-list-view .threecal-no-events {
+    text-align: center;
+    padding: 48px 24px;
+    background: var(--threecal-bg);
+    border-radius: var(--threecal-radius-sm);
+    color: var(--threecal-text-light);
+}
+
+/* List View Theme Adjustments */
+.threecal-theme-glassmorphism .threecal-list-day {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.threecal-theme-glassmorphism .threecal-list-day-header {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.threecal-theme-glassmorphism .threecal-list-day-name,
+.threecal-theme-glassmorphism .threecal-list-event-title {
+    color: #fff;
+}
+
+.threecal-theme-glassmorphism .threecal-list-day-date,
+.threecal-theme-glassmorphism .threecal-list-event-time {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.threecal-theme-glassmorphism .threecal-list-event {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.threecal-theme-glassmorphism .threecal-list-event:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.threecal-theme-gradient .threecal-list-day {
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.threecal-theme-gradient .threecal-list-view .threecal-no-events {
+    background: rgba(255, 255, 255, 0.95);
+}

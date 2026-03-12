@@ -1,0 +1,222 @@
+/**
+ * 3task Calendar - Mini Calendar Styles
+ *
+ * @package 3task-calendar
+ * @since 1.2.2
+ */
+
+.threecal-mini-wrapper {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 12px;
+    max-width: 280px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 10px;
+    position: relative;
+}
+
+.threecal-mini-wrapper .threecal-mini-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.threecal-mini-wrapper .threecal-mini-title {
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.threecal-mini-wrapper .threecal-mini-nav {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    text-decoration: none;
+    color: #666;
+    font-size: 16px;
+    border-radius: 4px;
+}
+
+.threecal-mini-wrapper .threecal-mini-nav:hover {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.threecal-mini-wrapper .threecal-mini-grid {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+}
+
+.threecal-mini-wrapper .threecal-mini-grid th {
+    padding: 4px 0;
+    font-weight: 500;
+    color: #888;
+    font-size: 10px;
+    text-transform: uppercase;
+}
+
+.threecal-mini-wrapper .threecal-mini-day {
+    padding: 2px;
+    vertical-align: middle;
+    position: relative;
+    cursor: default;
+}
+
+.threecal-mini-wrapper .threecal-mini-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    font-size: 11px;
+    border-radius: 50%;
+}
+
+.threecal-mini-wrapper .threecal-mini-today .threecal-mini-number {
+    background: #3788d8;
+    color: #fff;
+    font-weight: 600;
+}
+
+.threecal-mini-wrapper .threecal-mini-has-events {
+    cursor: pointer;
+}
+
+.threecal-mini-wrapper .threecal-mini-has-events:hover .threecal-mini-number {
+    background: #f0f0f0;
+}
+
+.threecal-mini-wrapper .threecal-mini-today.threecal-mini-has-events:hover .threecal-mini-number {
+    background: #2563eb;
+}
+
+.threecal-mini-wrapper .threecal-mini-dot {
+    display: block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    margin: 0 auto;
+    margin-top: -2px;
+}
+
+.threecal-mini-wrapper .threecal-mini-footer {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #eee;
+    text-align: center;
+}
+
+.threecal-mini-wrapper .threecal-mini-today-link {
+    font-size: 11px;
+    color: #3788d8;
+    text-decoration: none;
+}
+
+.threecal-mini-wrapper .threecal-mini-today-link:hover {
+    text-decoration: underline;
+}
+
+/* Popup Styles */
+.threecal-mini-wrapper .threecal-mini-popup {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    min-width: 200px;
+    max-width: 260px;
+    z-index: 100;
+}
+
+.threecal-mini-wrapper .threecal-mini-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    border-bottom: 1px solid #eee;
+    background: #f9f9f9;
+    border-radius: 8px 8px 0 0;
+}
+
+.threecal-mini-wrapper .threecal-mini-popup-date {
+    font-weight: 600;
+    font-size: 12px;
+    color: #333;
+}
+
+.threecal-mini-wrapper .threecal-mini-popup-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    width: 20px;
+    height: 20px;
+}
+
+.threecal-mini-wrapper .threecal-mini-popup-close:hover {
+    color: #333;
+}
+
+.threecal-mini-wrapper .threecal-mini-popup-events {
+    padding: 8px 0;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.threecal-mini-wrapper .threecal-mini-popup-event {
+    display: flex;
+    align-items: flex-start;
+    padding: 8px 12px;
+    text-decoration: none;
+    color: #333;
+    transition: background 0.15s;
+}
+
+.threecal-mini-wrapper .threecal-mini-popup-event:hover {
+    background: #f5f5f5;
+}
+
+.threecal-mini-wrapper .threecal-mini-popup-event-color {
+    width: 4px;
+    height: 100%;
+    min-height: 32px;
+    border-radius: 2px;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+.threecal-mini-wrapper .threecal-mini-popup-event-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.threecal-mini-wrapper .threecal-mini-popup-event-title {
+    font-size: 12px;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.threecal-mini-wrapper .threecal-mini-popup-event-time {
+    font-size: 11px;
+    color: #666;
+}
+
+.threecal-mini-wrapper .threecal-mini-popup-event.no-link {
+    cursor: default;
+}
