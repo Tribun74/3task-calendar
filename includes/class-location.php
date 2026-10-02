@@ -67,8 +67,8 @@ class ThreeCal_Location {
 		$this->city           = isset( $data->city ) ? $data->city : '';
 		$this->postal_code    = isset( $data->postal_code ) ? $data->postal_code : '';
 		$this->country        = isset( $data->country ) ? $data->country : 'DE';
-		$this->latitude       = isset( $data->latitude ) ? floatval( $data->latitude ) : null;
-		$this->longitude      = isset( $data->longitude ) ? floatval( $data->longitude ) : null;
+		$this->latitude       = ( isset( $data->latitude ) && '' !== $data->latitude ) ? floatval( $data->latitude ) : null;
+		$this->longitude      = ( isset( $data->longitude ) && '' !== $data->longitude ) ? floatval( $data->longitude ) : null;
 		$this->phone          = isset( $data->phone ) ? $data->phone : '';
 		$this->email          = isset( $data->email ) ? $data->email : '';
 		$this->website        = isset( $data->website ) ? $data->website : '';
@@ -87,6 +87,12 @@ class ThreeCal_Location {
 	public static function get( $id ) {
 		global $wpdb;
 
+		static $cache = array();
+		$id = absint( $id );
+		if ( array_key_exists( $id, $cache ) ) {
+			return $cache[ $id ];
+		}
+
 		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
@@ -96,11 +102,19 @@ class ThreeCal_Location {
 		);
 		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
 
-		if ( ! $row ) {
-			return null;
-		}
+		$cache[ $id ] = $row ? new self( $row ) : null;
 
-		return new self( $row );
+		return $cache[ $id ];
+	}
+
+	/**
+	 * Whether the location has real coordinates (0/0 counts as empty).
+	 *
+	 * @return bool
+	 */
+	public function has_coordinates() {
+		return null !== $this->latitude && null !== $this->longitude
+			&& ( abs( (float) $this->latitude ) > 0.000001 || abs( (float) $this->longitude ) > 0.000001 );
 	}
 
 	/**
@@ -302,6 +316,24 @@ class ThreeCal_Location {
 	}
 
 	/**
+	 * Link to a route planner on OpenStreetMap.
+	 *
+	 * Only a link: no data leaves the site until the visitor clicks it.
+	 *
+	 * @return string URL or empty string when there is no address.
+	 */
+	public function get_route_url() {
+		if ( $this->has_coordinates() ) {
+			return 'https://www.openstreetmap.org/directions?to=' . rawurlencode( (float) $this->latitude . ',' . (float) $this->longitude );
+		}
+		$address = trim( $this->address . ' ' . $this->postal_code . ' ' . $this->city );
+		if ( '' === $address ) {
+			return '';
+		}
+		return 'https://www.openstreetmap.org/search?query=' . rawurlencode( $address . ' ' . $this->get_country_name() );
+	}
+
+	/**
 	 * Get country name from code
 	 *
 	 * @return string
@@ -341,51 +373,5 @@ class ThreeCal_Location {
 			'US' => __( 'United States', '3task-calendar' ),
 			'CA' => __( 'Canada', '3task-calendar' ),
 		);
-	}
-
-	/**
-	 * Geocode address using Google Maps API
-	 *
-	 * @return bool
-	 */
-	public function geocode() {
-		$settings = get_option( 'threecal_settings', array() );
-		$api_key  = isset( $settings['google_maps_api_key'] ) ? $settings['google_maps_api_key'] : '';
-
-		if ( empty( $api_key ) ) {
-			return false;
-		}
-
-		$address = $this->get_full_address();
-
-		if ( empty( $address ) ) {
-			return false;
-		}
-
-		$url = add_query_arg(
-			array(
-				'address' => urlencode( $address ),
-				'key'     => $api_key,
-			),
-			'https://maps.googleapis.com/maps/api/geocode/json'
-		);
-
-		$response = wp_remote_get( $url, array( 'timeout' => 10 ) );
-
-		if ( is_wp_error( $response ) ) {
-			return false;
-		}
-
-		$body = wp_remote_retrieve_body( $response );
-		$data = json_decode( $body, true );
-
-		if ( isset( $data['status'] ) && $data['status'] === 'OK' && ! empty( $data['results'][0] ) ) {
-			$location        = $data['results'][0]['geometry']['location'];
-			$this->latitude  = $location['lat'];
-			$this->longitude = $location['lng'];
-			return true;
-		}
-
-		return false;
 	}
 }

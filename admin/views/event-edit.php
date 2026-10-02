@@ -23,6 +23,20 @@ if ( $event_id > 0 ) {
     }
 }
 
+// A date from a post is edited in the post, there is only one source.
+$threecal_from_post = ThreeCal_Post_Dates::post_of( $event );
+if ( $threecal_from_post && get_post( $threecal_from_post ) ) {
+    echo '<div class="notice notice-info inline threecal-from-posts-note"><p>';
+    /* translators: %s: title of the post */
+    echo esc_html( sprintf( __( 'This date comes from the post "%s" and is edited there. Changes made here would be overwritten.', '3task-calendar' ), get_the_title( $threecal_from_post ) ) );
+    $threecal_edit_link = get_edit_post_link( $threecal_from_post, 'raw' );
+    if ( $threecal_edit_link ) {
+        echo ' <a class="button button-primary" href="' . esc_url( $threecal_edit_link ) . '">' . esc_html__( 'Edit the post', '3task-calendar' ) . '</a>';
+    }
+    echo '</p></div>';
+    return;
+}
+
 $is_new = empty($event);
 $page_title = $is_new ? __('Add New Event', '3task-calendar') : __('Edit Event', '3task-calendar');
 
@@ -57,6 +71,18 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( wp_unslash( $_GET['m
     <?php if ($message === 'saved') : ?>
     <div class="notice notice-success is-dismissible">
         <p><?php esc_html_e('Event saved successfully.', '3task-calendar'); ?></p>
+    </div>
+    <?php elseif ( $message === 'date_cancel' ) : ?>
+    <div class="notice notice-success is-dismissible">
+        <p><?php esc_html_e( 'The date is marked as cancelled. Visitors still see it, crossed out, and calendar subscribers get the cancellation.', '3task-calendar' ); ?></p>
+    </div>
+    <?php elseif ( $message === 'date_restore' ) : ?>
+    <div class="notice notice-success is-dismissible">
+        <p><?php esc_html_e( 'The date takes place again.', '3task-calendar' ); ?></p>
+    </div>
+    <?php elseif ( $message === 'date_remove' ) : ?>
+    <div class="notice notice-success is-dismissible">
+        <p><?php esc_html_e( 'The date was removed from the series.', '3task-calendar' ); ?></p>
     </div>
     <?php endif; ?>
 
@@ -111,6 +137,33 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( wp_unslash( $_GET['m
                         <?php esc_html_e('All-day event', '3task-calendar'); ?>
                     </label>
                 </div>
+
+                <!-- Repeat -->
+                <?php if ( $event && $event->parent_id ) : ?>
+                <div class="notice notice-info inline">
+                    <p>
+                        <?php esc_html_e( 'This event is part of a series. Saving it will detach it from the series, so your changes only apply to this date.', '3task-calendar' ); ?>
+                        <a href="<?php echo esc_url( admin_url( 'admin.php?page=3task-calendar&tab=events&action=edit&event=' . $event->parent_id ) ); ?>"><?php esc_html_e( 'Edit the whole series', '3task-calendar' ); ?></a>
+                    </p>
+                </div>
+                <?php else : ?>
+                <div class="threecal-field-row">
+                    <div class="threecal-field threecal-field-half">
+                        <label for="event_recurrence"><?php esc_html_e( 'Repeat', '3task-calendar' ); ?></label>
+                        <select id="event_recurrence" name="event_recurrence">
+                            <?php foreach ( ThreeCal_Event::recurrence_options() as $rule_key => $rule_label ) : ?>
+                            <option value="<?php echo esc_attr( $rule_key ); ?>" <?php selected( $event ? (string) $event->recurrence_rule : '', $rule_key ); ?>><?php echo esc_html( $rule_label ); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="threecal-field threecal-field-half">
+                        <label for="event_recurrence_end"><?php esc_html_e( 'Repeat until', '3task-calendar' ); ?></label>
+                        <input type="date" id="event_recurrence_end" name="event_recurrence_end"
+                               value="<?php echo esc_attr( $event && $event->recurrence_end ? substr( $event->recurrence_end, 0, 10 ) : '' ); ?>">
+                        <p class="description"><?php esc_html_e( 'Without an end date the series runs for one year (at most 200 dates).', '3task-calendar' ); ?></p>
+                    </div>
+                </div>
+                <?php endif; ?>
 
                 <!-- Location -->
                 <div class="threecal-field">
@@ -235,4 +288,64 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( wp_unslash( $_GET['m
             </div>
         </div>
     </form>
+
+    <?php
+    // Single dates of a series: cancel, restore or remove one date without touching the others.
+    if ( $event && ! $event->parent_id && $event->recurrence_rule ) :
+        $threecal_split   = $event->get_split_events();
+        $threecal_dates   = array_merge( $threecal_split, array( $event ), $event->get_series_events() );
+        $threecal_split_ids = array_map( 'intval', wp_list_pluck( $threecal_split, 'id' ) );
+        $threecal_dformat = get_option( 'date_format' );
+        $threecal_tformat = get_option( 'time_format' );
+        $threecal_today   = current_time( 'Y-m-d' );
+        $threecal_live    = 'published' === $event->status;
+        $threecal_base    = admin_url( 'admin.php?page=3task-calendar&tab=events&series=' . $event->id );
+        ?>
+    <div class="threecal-meta-box threecal-series-dates">
+        <h3><?php esc_html_e( 'Dates of this series', '3task-calendar' ); ?></h3>
+        <div class="threecal-meta-box-content">
+            <p class="description"><?php esc_html_e( 'Cancel a single date, for example when a training is called off. Cancelled dates stay visible, crossed out. Edit opens the date on its own and takes it out of the series.', '3task-calendar' ); ?></p>
+            <table class="threecal-series-table">
+                <tbody>
+                <?php foreach ( $threecal_dates as $threecal_date ) :
+                    $threecal_day   = substr( (string) $threecal_date->start_date, 0, 10 );
+                    $threecal_ts    = strtotime( $threecal_date->start_date );
+                    $threecal_past  = $threecal_day < $threecal_today;
+                    $threecal_first = (int) $threecal_date->id === (int) $event->id;
+                    $threecal_sep   = in_array( (int) $threecal_date->id, $threecal_split_ids, true );
+                    $threecal_off   = 'cancelled' === $threecal_date->status;
+                    $threecal_url   = function ( $action ) use ( $threecal_base, $threecal_day, $event ) {
+                        return wp_nonce_url( add_query_arg( array( 'threecal_date_action' => $action, 'date' => $threecal_day ), $threecal_base ), 'threecal_series_' . $event->id );
+                    };
+                    ?>
+                    <tr class="<?php echo $threecal_off ? 'is-cancelled' : ''; ?><?php echo $threecal_past ? ' is-past' : ''; ?>">
+                        <td class="threecal-series-date">
+                            <?php echo esc_html( date_i18n( 'D', $threecal_ts ) . ', ' . date_i18n( $threecal_dformat, $threecal_ts ) ); ?>
+                            <?php if ( ! $event->all_day ) : ?><span class="threecal-series-time"><?php echo esc_html( date_i18n( $threecal_tformat, $threecal_ts ) ); ?></span><?php endif; ?>
+                        </td>
+                        <td class="threecal-series-state">
+                            <?php if ( $threecal_off ) : ?><span class="threecal-status-badge threecal-status-cancelled"><?php esc_html_e( 'Cancelled', '3task-calendar' ); ?></span><?php endif; ?>
+                            <?php if ( $threecal_first ) : ?><span class="threecal-series-first"><?php esc_html_e( 'First date', '3task-calendar' ); ?></span><?php endif; ?>
+                            <?php if ( $threecal_sep ) : ?><span class="threecal-series-first"><?php esc_html_e( 'Separate event', '3task-calendar' ); ?></span><?php endif; ?>
+                        </td>
+                        <td class="threecal-series-actions">
+                            <?php if ( ! $threecal_past ) : ?>
+                                <?php if ( ! $threecal_first ) : ?>
+                                <a href="<?php echo esc_url( admin_url( 'admin.php?page=3task-calendar&tab=events&action=edit&event=' . $threecal_date->id ) ); ?>"><?php esc_html_e( 'Edit', '3task-calendar' ); ?></a>
+                                <?php endif; ?>
+                                <?php if ( $threecal_live && ! $threecal_off ) : ?>
+                                <a href="<?php echo esc_url( $threecal_url( 'cancel' ) ); ?>"><?php esc_html_e( 'Cancel date', '3task-calendar' ); ?></a>
+                                <?php elseif ( $threecal_live && $threecal_off ) : ?>
+                                <a href="<?php echo esc_url( $threecal_url( 'restore' ) ); ?>"><?php esc_html_e( 'Takes place again', '3task-calendar' ); ?></a>
+                                <?php endif; ?>
+                                <a class="threecal-series-remove" href="<?php echo esc_url( $threecal_url( 'remove' ) ); ?>" onclick="return confirm('<?php echo esc_js( __( 'Remove this date from the series? Visitors will no longer see it.', '3task-calendar' ) ); ?>');"><?php esc_html_e( 'Remove', '3task-calendar' ); ?></a>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <?php endif; ?>
 </div>

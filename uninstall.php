@@ -37,6 +37,13 @@ if ( $threecal_delete_data ) {
 	// Delete options.
 	delete_option( 'threecal_settings' );
 	delete_option( 'threecal_db_version' );
+	delete_option( 'threecal_post_dates' );
+	delete_option( 'threecal_no_schema_categories' );
+
+	// Dates stored in posts.
+	foreach ( array( '_threecal_show', '_threecal_start', '_threecal_end', '_threecal_all_day', '_threecal_event_id', '_threecal_sort' ) as $threecal_meta_key ) {
+		delete_post_meta_by_key( $threecal_meta_key );
+	}
 
 	// Delete transients.
 	delete_transient( 'threecal_activated' );

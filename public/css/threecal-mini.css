@@ -1,222 +1,281 @@
 /**
- * 3task Calendar - Mini Calendar Styles
+ * 3task Calendar - Mini Calendar (1.3.0)
  *
- * @package 3task-calendar
- * @since 1.2.2
+ * Same design variables as the main calendar: --tc-accent per calendar,
+ * --tc-ev per event color.
  */
 
 .threecal-mini-wrapper {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    font-size: 12px;
-    max-width: 280px;
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    padding: 10px;
+    --tc-accent: #4f46e5;
+    --tc-accent-ink: #ffffff;
+    --tc-surface: #ffffff;
+    --tc-surface-2: #f5f6fa;
+    --tc-text: #141824;
+    --tc-muted: #646b7d;
+    --tc-border: #e6e8ef;
     position: relative;
+    max-width: 340px;
+    padding: 16px;
+    border: 1px solid var(--tc-border);
+    border-radius: 16px;
+    background: var(--tc-surface);
+    color: var(--tc-text);
+    font-family: inherit;
+    line-height: 1.4;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.06);
 }
 
-.threecal-mini-wrapper .threecal-mini-header {
+.threecal-mini-wrapper * {
+    box-sizing: border-box;
+}
+
+.threecal-mini-wrapper .threecal-icon {
+    display: block;
+}
+
+.threecal-mini-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #eee;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
 }
 
-.threecal-mini-wrapper .threecal-mini-title {
-    font-weight: 600;
-    font-size: 13px;
+.threecal-mini-title {
+    flex: 1 1 auto;
+    font-size: 15px;
+    font-weight: 750;
+    text-align: center;
 }
 
 .threecal-mini-wrapper .threecal-mini-nav {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--tc-surface-2);
+    color: var(--tc-text);
     text-decoration: none;
-    color: #666;
-    font-size: 16px;
-    border-radius: 4px;
 }
 
 .threecal-mini-wrapper .threecal-mini-nav:hover {
-    background: #f0f0f0;
-    color: #333;
+    background: var(--tc-accent);
+    color: var(--tc-accent-ink);
 }
 
 .threecal-mini-wrapper .threecal-mini-grid {
     width: 100%;
-    border-collapse: collapse;
-    text-align: center;
+    margin: 0;
+    table-layout: fixed;
+    border: 0;
+    border-collapse: separate;
+    border-spacing: 2px;
 }
 
 .threecal-mini-wrapper .threecal-mini-grid th {
     padding: 4px 0;
-    font-weight: 500;
-    color: #888;
-    font-size: 10px;
+    border: 0;
+    background: transparent;
+    color: var(--tc-muted);
+    font-size: 11px;
+    font-weight: 650;
+    text-align: center;
     text-transform: uppercase;
 }
 
 .threecal-mini-wrapper .threecal-mini-day {
-    padding: 2px;
-    vertical-align: middle;
     position: relative;
-    cursor: default;
+    height: 38px;
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    vertical-align: middle;
 }
 
-.threecal-mini-wrapper .threecal-mini-number {
+.threecal-mini-number {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 26px;
-    height: 26px;
-    font-size: 11px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
 }
 
-.threecal-mini-wrapper .threecal-mini-today .threecal-mini-number {
-    background: #3788d8;
-    color: #fff;
-    font-weight: 600;
+.threecal-mini-today .threecal-mini-number {
+    background: var(--tc-accent);
+    color: var(--tc-accent-ink);
+    font-weight: 700;
 }
 
-.threecal-mini-wrapper .threecal-mini-has-events {
+.threecal-mini-has-events {
     cursor: pointer;
+    font-weight: 700;
 }
 
-.threecal-mini-wrapper .threecal-mini-has-events:hover .threecal-mini-number {
-    background: #f0f0f0;
+.threecal-mini-has-events:hover,
+.threecal-mini-has-events:focus-visible {
+    background: var(--tc-surface-2);
+    outline: none;
 }
 
-.threecal-mini-wrapper .threecal-mini-today.threecal-mini-has-events:hover .threecal-mini-number {
-    background: #2563eb;
+.threecal-mini-has-events:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--tc-accent);
 }
 
-.threecal-mini-wrapper .threecal-mini-dot {
-    display: block;
-    width: 5px;
-    height: 5px;
+.threecal-mini-dot {
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    width: 6px;
+    height: 6px;
+    margin-left: -3px;
     border-radius: 50%;
-    margin: 0 auto;
-    margin-top: -2px;
+    background: var(--tc-ev, var(--tc-accent));
 }
 
-.threecal-mini-wrapper .threecal-mini-footer {
+/* On today the dot sits on the edge of the circle; a ring keeps it visible */
+.threecal-mini-today .threecal-mini-dot {
+    bottom: 1px;
+    z-index: 1;
+    box-shadow: 0 0 0 2px var(--tc-surface);
+}
+
+.threecal-mini-footer {
     margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px solid #eee;
     text-align: center;
 }
 
 .threecal-mini-wrapper .threecal-mini-today-link {
-    font-size: 11px;
-    color: #3788d8;
+    color: var(--tc-accent);
+    font-size: 13px;
+    font-weight: 650;
     text-decoration: none;
 }
 
-.threecal-mini-wrapper .threecal-mini-today-link:hover {
-    text-decoration: underline;
-}
-
-/* Popup Styles */
-.threecal-mini-wrapper .threecal-mini-popup {
+/* Popup */
+.threecal-mini-popup {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    min-width: 200px;
-    max-width: 260px;
-    z-index: 100;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    z-index: 20;
+    padding: 12px;
+    border: 1px solid var(--tc-border);
+    border-radius: 14px;
+    background: var(--tc-surface);
+    box-shadow: 0 18px 40px rgba(16, 24, 40, 0.18);
 }
 
-.threecal-mini-wrapper .threecal-mini-popup-header {
+.threecal-mini-popup-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 10px 12px;
-    border-bottom: 1px solid #eee;
-    background: #f9f9f9;
-    border-radius: 8px 8px 0 0;
+    justify-content: space-between;
+    margin-bottom: 8px;
 }
 
-.threecal-mini-wrapper .threecal-mini-popup-date {
-    font-weight: 600;
-    font-size: 12px;
-    color: #333;
+.threecal-mini-popup-date {
+    font-size: 13px;
+    font-weight: 750;
 }
 
 .threecal-mini-wrapper .threecal-mini-popup-close {
-    background: none;
-    border: none;
-    font-size: 18px;
-    color: #999;
-    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
     padding: 0;
-    line-height: 1;
-    width: 20px;
-    height: 20px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--tc-surface-2);
+    color: var(--tc-text);
+    cursor: pointer;
 }
 
-.threecal-mini-wrapper .threecal-mini-popup-close:hover {
-    color: #333;
-}
-
-.threecal-mini-wrapper .threecal-mini-popup-events {
-    padding: 8px 0;
-    max-height: 200px;
-    overflow-y: auto;
+.threecal-mini-popup-events {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
 .threecal-mini-wrapper .threecal-mini-popup-event {
     display: flex;
-    align-items: flex-start;
-    padding: 8px 12px;
+    align-items: stretch;
+    gap: 10px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    color: var(--tc-text);
     text-decoration: none;
-    color: #333;
-    transition: background 0.15s;
 }
 
-.threecal-mini-wrapper .threecal-mini-popup-event:hover {
-    background: #f5f5f5;
+.threecal-mini-wrapper a.threecal-mini-popup-event:hover {
+    background: var(--tc-surface-2);
 }
 
-.threecal-mini-wrapper .threecal-mini-popup-event-color {
-    width: 4px;
-    height: 100%;
-    min-height: 32px;
-    border-radius: 2px;
-    margin-right: 10px;
-    flex-shrink: 0;
+.threecal-mini-popup-event-color {
+    flex: 0 0 4px;
+    border-radius: 4px;
+    background: var(--tc-ev, var(--tc-accent));
 }
 
-.threecal-mini-wrapper .threecal-mini-popup-event-info {
-    flex: 1;
-    min-width: 0;
+.threecal-mini-popup-event-title {
+    font-size: 13px;
+    font-weight: 650;
 }
 
-.threecal-mini-wrapper .threecal-mini-popup-event-title {
+.threecal-mini-popup-event-time {
+    color: var(--tc-muted);
     font-size: 12px;
-    font-weight: 500;
-    color: #333;
-    margin-bottom: 2px;
-    white-space: nowrap;
+}
+
+/* Design: Accent */
+.threecal-mini-wrapper.threecal-theme-accent {
+    padding: 0 0 12px;
     overflow: hidden;
-    text-overflow: ellipsis;
+    border: 0;
 }
 
-.threecal-mini-wrapper .threecal-mini-popup-event-time {
-    font-size: 11px;
-    color: #666;
+.threecal-theme-accent .threecal-mini-header {
+    margin: 0 0 8px;
+    padding: 14px 12px;
+    background: linear-gradient(135deg, var(--tc-accent) 0%, color-mix(in srgb, var(--tc-accent) 55%, #0ea5e9) 100%);
+    color: var(--tc-accent-ink);
 }
 
-.threecal-mini-wrapper .threecal-mini-popup-event.no-link {
-    cursor: default;
+.threecal-mini-wrapper.threecal-theme-accent .threecal-mini-nav {
+    background: rgba(255, 255, 255, 0.18);
+    color: var(--tc-accent-ink);
+}
+
+.threecal-theme-accent .threecal-mini-grid {
+    padding: 0 10px;
+}
+
+.threecal-theme-accent .threecal-mini-has-events {
+    background: color-mix(in srgb, var(--tc-accent) 10%, transparent);
+}
+
+/* Design: Night */
+.threecal-mini-wrapper.threecal-theme-dark {
+    --tc-surface: #0d1424;
+    --tc-surface-2: #182339;
+    --tc-text: #e7ebf5;
+    --tc-muted: #93a0bb;
+    --tc-border: #222e4a;
+    --tc-accent-ink: #06121f;
+    box-shadow: 0 18px 40px rgba(2, 6, 23, 0.45);
+}
+
+.threecal-theme-dark .threecal-mini-today .threecal-mini-number {
+    box-shadow: 0 0 14px color-mix(in srgb, var(--tc-accent) 60%, transparent);
+}
+
+.threecal-theme-dark .threecal-mini-dot {
+    box-shadow: 0 0 6px var(--tc-ev, var(--tc-accent));
 }

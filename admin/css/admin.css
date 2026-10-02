@@ -988,3 +988,1030 @@
     color: #646970;
     font-size: 13px;
 }
+
+/* Series badge (1.3.0) */
+.threecal-series-badge {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 8px;
+    border-radius: 10px;
+    background: #f0f6fc;
+    color: #2271b1;
+    font-size: 11px;
+    font-weight: 600;
+    vertical-align: 1px;
+}
+
+
+/* ==========================================================================
+   3task design system (1.3.0): header, tabs, KPIs, panels
+   Same structure as LinkTrade Monitor and 3task Glossary,
+   own gradient for the calendar (blue to teal).
+   ========================================================================== */
+.threecal-admin {
+    --tca-g1: #2563eb;
+    --tca-g2: #0ea5e9;
+    --tca-g3: #14b8a6;
+    --tca-text: #0f172a;
+    --tca-muted: #64748b;
+    --tca-border: #e2e8f0;
+    --tca-bg: #f8fafc;
+    --tca-card: #ffffff;
+    --tca-radius: 16px;
+    --tca-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06);
+    margin: 20px 20px 40px 0;
+    color: var(--tca-text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+.threecal-admin .threecal-icon {
+    display: inline-block;
+    flex: 0 0 auto;
+    vertical-align: middle;
+}
+
+/* Header */
+.threecal-admin-header {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding: 30px 36px;
+    overflow: hidden;
+    border-radius: 20px;
+    background: linear-gradient(135deg, var(--tca-g1), var(--tca-g2), var(--tca-g3));
+    background-size: 200% 200%;
+    box-shadow: 0 12px 32px rgba(14, 116, 144, 0.22);
+    color: #ffffff;
+    animation: threecal-admin-shift 10s ease infinite;
+}
+
+.threecal-admin-header::before,
+.threecal-admin-header::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    pointer-events: none;
+}
+
+.threecal-admin-header::before {
+    top: -40px;
+    right: 12%;
+    width: 140px;
+    height: 140px;
+}
+
+.threecal-admin-header::after {
+    bottom: -30px;
+    right: 30%;
+    width: 90px;
+    height: 90px;
+}
+
+@keyframes threecal-admin-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+.threecal-admin-header-left,
+.threecal-admin-header-right {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.threecal-admin-header-right {
+    gap: 10px;
+}
+
+.threecal-admin-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+}
+
+.threecal-admin-title {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.threecal-admin-name {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+}
+
+.threecal-admin-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+}
+
+.threecal-admin-version {
+    padding: 3px 12px;
+    border-radius: 100px;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.threecal-admin-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.threecal-admin-status::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4ade80;
+    box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.25);
+}
+
+.threecal-admin .threecal-admin-header-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.threecal-admin .threecal-admin-header-btn:hover,
+.threecal-admin .threecal-admin-header-btn:focus {
+    background: rgba(255, 255, 255, 0.26);
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+/* Tabs */
+.threecal-admin-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 8px 14px 0;
+    overflow-x: auto;
+    border: 1px solid var(--tca-border);
+    border-bottom: 0;
+    border-radius: var(--tca-radius) var(--tca-radius) 0 0;
+    background: var(--tca-card);
+    scrollbar-width: none;
+}
+
+.threecal-admin .threecal-admin-tab {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 18px;
+    border-radius: 12px 12px 0 0;
+    color: var(--tca-muted);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.threecal-admin .threecal-admin-tab::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 0;
+    height: 3px;
+    border-radius: 3px 3px 0 0;
+    background: linear-gradient(90deg, var(--tca-g1), var(--tca-g3));
+    transform: translateX(-50%);
+    transition: width 0.2s ease;
+}
+
+.threecal-admin .threecal-admin-tab:hover {
+    background: var(--tca-bg);
+    color: var(--tca-g1);
+}
+
+.threecal-admin .threecal-admin-tab.is-active {
+    background: linear-gradient(180deg, #e0f2fe 0%, #ffffff 100%);
+    color: var(--tca-g1);
+}
+
+.threecal-admin .threecal-admin-tab.is-active::after {
+    width: 100%;
+}
+
+.threecal-admin .threecal-admin-tab:focus-visible {
+    outline: 2px solid var(--tca-g1);
+    outline-offset: -2px;
+    box-shadow: none;
+}
+
+.threecal-admin-badge {
+    padding: 1px 8px;
+    border-radius: 100px;
+    background: var(--tca-g3);
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.threecal-admin .threecal-admin-content {
+    min-height: 480px;
+    padding: 28px;
+    border: 1px solid var(--tca-border);
+    border-top: 0;
+    border-radius: 0 0 var(--tca-radius) var(--tca-radius);
+    background: var(--tca-card);
+    box-shadow: var(--tca-shadow);
+}
+
+/* Onboarding */
+.threecal-onboarding {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 24px;
+    padding: 22px 24px;
+    border: 1px solid #bae6fd;
+    border-radius: var(--tca-radius);
+    background: linear-gradient(135deg, #eff6ff, #ecfeff);
+}
+
+.threecal-onboarding-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: #ffffff;
+    color: var(--tca-g1);
+    box-shadow: var(--tca-shadow);
+}
+
+.threecal-onboarding-text {
+    flex: 1 1 260px;
+}
+
+.threecal-onboarding-text h2 {
+    margin: 0 0 4px;
+    font-size: 18px;
+}
+
+.threecal-onboarding-text p {
+    margin: 0;
+    color: var(--tca-muted);
+}
+
+/* Buttons */
+.threecal-admin .threecal-btn-primary,
+.threecal-admin .button-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 18px;
+    border: 0;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--tca-g1), var(--tca-g2));
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 40px;
+    text-decoration: none;
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.25);
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.threecal-admin .threecal-btn-primary:hover,
+.threecal-admin .button-primary:hover,
+.threecal-admin .button-primary:focus {
+    background: linear-gradient(135deg, #1d4ed8, #0284c7);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(37, 99, 235, 0.3);
+}
+
+/* KPI cards */
+.threecal-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+    margin-bottom: 24px;
+}
+
+.threecal-kpi {
+    position: relative;
+    padding: 22px;
+    overflow: hidden;
+    border: 1px solid var(--tca-border);
+    border-radius: var(--tca-radius);
+    background: var(--tca-card);
+    box-shadow: var(--tca-shadow);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.threecal-kpi::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--kpi, var(--tca-g1));
+}
+
+.threecal-kpi:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.05), 0 16px 32px rgba(15, 23, 42, 0.1);
+}
+
+.kpi-blue { --kpi: #2563eb; }
+.kpi-green { --kpi: #10b981; }
+.kpi-orange { --kpi: #f59e0b; }
+.kpi-teal { --kpi: #14b8a6; }
+
+.threecal-kpi-head {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--kpi) 12%, #ffffff);
+    color: var(--kpi);
+}
+
+.threecal-kpi-value {
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.threecal-kpi-label {
+    margin-top: 8px;
+    color: var(--tca-muted);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+/* Panels */
+.threecal-admin-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+}
+
+.threecal-admin-side {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.threecal-panel,
+.threecal-admin .threecal-card {
+    padding: 24px;
+    border: 1px solid var(--tca-border);
+    border-radius: var(--tca-radius);
+    background: var(--tca-card);
+    box-shadow: var(--tca-shadow);
+}
+
+.threecal-panel + .threecal-panel {
+    margin-top: 0;
+}
+
+.threecal-design-form .threecal-panel {
+    margin-bottom: 24px;
+}
+
+.threecal-admin .threecal-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 18px;
+    padding: 0 0 14px;
+    border-bottom: 1px solid var(--tca-border);
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.threecal-panel-title .threecal-icon {
+    color: var(--tca-g1);
+}
+
+.threecal-panel-tint {
+    border-color: #bae6fd;
+    background: linear-gradient(135deg, #f0f9ff, #f0fdfa);
+}
+
+.threecal-muted {
+    color: var(--tca-muted);
+}
+
+.threecal-admin-upcoming {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.threecal-admin-upcoming li {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--tca-border);
+    border-radius: 12px;
+    background: var(--tca-bg);
+}
+
+.threecal-admin-date {
+    display: flex;
+    flex: 0 0 48px;
+    flex-direction: column;
+    align-items: center;
+    padding: 6px 0;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--tc-ev, var(--tca-g1)) 14%, #ffffff);
+    color: color-mix(in srgb, var(--tc-ev, var(--tca-g1)) 75%, #0f172a);
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.1;
+    text-transform: uppercase;
+}
+
+.threecal-admin-date strong {
+    font-size: 20px;
+}
+
+.threecal-admin-upcoming-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.threecal-admin-upcoming-text a {
+    overflow: hidden;
+    color: var(--tca-text);
+    font-weight: 650;
+    text-decoration: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.threecal-admin-upcoming-text a:hover {
+    color: var(--tca-g1);
+}
+
+.threecal-quick {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.threecal-admin .threecal-quick a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 18px 10px;
+    border: 1px solid var(--tca-border);
+    border-radius: 14px;
+    background: var(--tca-bg);
+    color: var(--tca-text);
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.threecal-admin .threecal-quick a:hover {
+    border-color: #7dd3fc;
+    box-shadow: var(--tca-shadow);
+    transform: translateY(-2px);
+}
+
+.threecal-quick-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: #ffffff;
+    color: var(--tca-g1);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.threecal-pill {
+    display: inline-block;
+    margin-bottom: 12px;
+    padding: 4px 12px;
+    border-radius: 100px;
+    background: linear-gradient(135deg, var(--tca-g1), var(--tca-g3));
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.threecal-feature-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.threecal-feature-chips li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding: 6px 12px;
+    border: 1px solid #bae6fd;
+    border-radius: 100px;
+    background: #ffffff;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.threecal-feature-chips .threecal-icon {
+    color: var(--tca-g3);
+}
+
+/* Design tab */
+.threecal-design-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 18px;
+}
+
+.threecal-design-option {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px;
+    border: 2px solid var(--tca-border);
+    border-radius: 16px;
+    background: var(--tca-bg);
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.threecal-design-option input {
+    position: absolute;
+    opacity: 0;
+}
+
+.threecal-design-option:hover {
+    border-color: #7dd3fc;
+}
+
+.threecal-design-option.is-selected,
+.threecal-design-option:has(input:checked) {
+    border-color: var(--tca-g1);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+.threecal-design-option:has(input:focus-visible) {
+    outline: 2px solid var(--tca-g1);
+    outline-offset: 2px;
+}
+
+.threecal-design-preview {
+    display: block;
+    pointer-events: none;
+}
+
+.threecal-design-preview .threecal-mini-wrapper {
+    max-width: none;
+}
+
+.threecal-design-name {
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.threecal-design-name code {
+    margin-left: 4px;
+    font-size: 11px;
+}
+
+.threecal-design-desc {
+    color: var(--tca-muted);
+    font-size: 13px;
+}
+
+@media (max-width: 1200px) {
+    .threecal-kpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .threecal-admin-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .threecal-admin {
+        margin-right: 10px;
+    }
+
+    .threecal-admin-header {
+        padding: 22px;
+    }
+
+    .threecal-admin .threecal-admin-content {
+        padding: 16px;
+    }
+
+    .threecal-kpis {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .threecal-admin-header {
+        animation: none;
+    }
+}
+
+/* Header text stays white (older rules use the same class names) */
+.threecal-admin .threecal-admin-header .threecal-admin-title,
+.threecal-admin .threecal-admin-header .threecal-admin-name,
+.threecal-admin .threecal-admin-header .threecal-admin-meta,
+.threecal-admin .threecal-admin-header .threecal-admin-status,
+.threecal-admin .threecal-admin-header .threecal-admin-version {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background-color: transparent;
+    color: #ffffff;
+    font-size: inherit;
+}
+
+.threecal-admin .threecal-admin-header .threecal-admin-name {
+    font-size: 26px;
+    font-weight: 800;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.threecal-admin .threecal-admin-header .threecal-admin-meta {
+    font-size: 13px;
+}
+
+.threecal-admin .threecal-admin-header .threecal-admin-version {
+    padding: 3px 12px;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 11px;
+}
+
+/* Events list (1.3.0) */
+.threecal-list-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.threecal-segmented {
+    display: inline-flex;
+    padding: 3px;
+    border: 1px solid var(--tca-border);
+    border-radius: 100px;
+    background: var(--tca-bg);
+}
+
+.threecal-admin .threecal-segmented a {
+    padding: 8px 16px;
+    border-radius: 100px;
+    color: var(--tca-muted);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.threecal-admin .threecal-segmented a.is-active {
+    background: #ffffff;
+    color: var(--tca-g1);
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
+}
+
+.threecal-event-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.threecal-event-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 0;
+    padding: 10px 14px;
+    border: 1px solid var(--tca-border);
+    border-left: 4px solid var(--tc-ev, var(--tca-g1));
+    border-radius: 12px;
+    background: #ffffff;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.threecal-event-row:hover {
+    box-shadow: var(--tca-shadow);
+}
+
+.threecal-event-row.status-draft {
+    background: #fffbeb;
+}
+
+.threecal-event-row.status-cancelled .threecal-event-row-title {
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+.threecal-event-row-main {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.threecal-admin .threecal-event-row-title {
+    overflow: hidden;
+    color: var(--tca-text);
+    font-size: 14px;
+    font-weight: 650;
+    text-decoration: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.threecal-admin .threecal-event-row-title:hover {
+    color: var(--tca-g1);
+}
+
+.threecal-event-row-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    color: var(--tca-muted);
+    font-size: 12px;
+}
+
+.threecal-event-row-meta > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.threecal-admin .threecal-series-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+    padding: 1px 8px;
+    border-radius: 100px;
+    background: #e0f2fe;
+    color: #0369a1;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.threecal-cat-chip {
+    padding: 1px 8px;
+    border-radius: 100px;
+    background: color-mix(in srgb, var(--tc-ev, var(--tca-g1)) 14%, #ffffff);
+    color: color-mix(in srgb, var(--tc-ev, var(--tca-g1)) 70%, #0f172a);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.threecal-status {
+    flex: 0 0 auto;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.threecal-status-published { background: #dcfce7; color: #166534; }
+.threecal-status-draft { background: #fef3c7; color: #92400e; }
+.threecal-status-cancelled { background: #fee2e2; color: #991b1b; }
+
+.threecal-event-row-actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 4px;
+}
+
+.threecal-admin .threecal-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    color: var(--tca-muted);
+    text-decoration: none;
+}
+
+.threecal-admin .threecal-icon-btn:hover {
+    background: var(--tca-bg);
+    color: var(--tca-g1);
+}
+
+.threecal-admin .threecal-icon-btn.is-danger:hover {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.threecal-empty {
+    padding: 48px 16px;
+    border: 2px dashed var(--tca-border);
+    border-radius: var(--tca-radius);
+    color: var(--tca-muted);
+    text-align: center;
+}
+
+.threecal-empty .threecal-icon {
+    color: var(--tca-g2);
+}
+
+@media (max-width: 782px) {
+    .threecal-event-row {
+        flex-wrap: wrap;
+    }
+
+    .threecal-status {
+        order: 3;
+    }
+}
+
+/* Dates of a series */
+.threecal-series-dates {
+    margin-top: 24px;
+}
+
+.threecal-series-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.threecal-series-table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid #eef0f4;
+    vertical-align: middle;
+}
+
+.threecal-series-table tr:last-child td {
+    border-bottom: 0;
+}
+
+.threecal-series-date {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.threecal-series-time {
+    margin-left: 8px;
+    color: #64748b;
+    font-weight: 400;
+}
+
+.threecal-series-table tr.is-cancelled .threecal-series-date {
+    text-decoration: line-through;
+    color: #94a3b8;
+}
+
+.threecal-series-table tr.is-past {
+    opacity: 0.55;
+}
+
+.threecal-series-first {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.threecal-series-actions {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.threecal-series-actions a {
+    margin-left: 14px;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.threecal-series-actions a.threecal-series-remove {
+    color: #b91c1c;
+}
+
+@media (max-width: 782px) {
+    .threecal-series-table td {
+        display: block;
+        padding: 4px 0;
+        border: 0;
+        text-align: left;
+    }
+
+    .threecal-series-table tr {
+        display: block;
+        padding: 8px 0;
+        border-bottom: 1px solid #eef0f4;
+    }
+
+    .threecal-series-actions a {
+        margin: 0 14px 0 0;
+    }
+}
+
+/* Dates from posts (tab "Posts") */
+.threecal-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+}
+
+.threecal-post-type-card.is-on {
+    border-left: 4px solid #2563eb;
+}
+
+.threecal-post-type-card:not(.is-on) .form-table tr + tr {
+    opacity: 0.6;
+}
+
+.threecal-source-custom {
+    display: block;
+    margin-top: 8px;
+}
+
+.threecal-source-custom[hidden] {
+    display: none;
+}
+
+.threecal-post-type-card select {
+    min-width: 16rem;
+    max-width: 100%;
+}
+
+.threecal-sync-progress {
+    margin-left: 10px;
+    color: #1d4ed8;
+    font-weight: 600;
+}
+
+.threecal-from-posts-note {
+    margin: 0 0 16px;
+}
+
+.threecal-from-posts-note a {
+    margin-left: 6px;
+    font-weight: 600;
+}

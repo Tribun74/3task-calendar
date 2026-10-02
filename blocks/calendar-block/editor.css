@@ -53,10 +53,10 @@
 }
 
 /* Inspector Controls */
-.wp-block[data-type="3task-calendar/calendar"] .components-panel__body-title {
+.wp-block[data-type="threecal/calendar"] .components-panel__body-title {
     font-weight: 600;
 }
 
-.wp-block[data-type="3task-calendar/calendar"] .components-select-control__input {
+.wp-block[data-type="threecal/calendar"] .components-select-control__input {
     border-radius: 6px;
 }

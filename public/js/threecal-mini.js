@@ -53,8 +53,14 @@
             }
         });
 
-        // Day click handler
+        // Day click handler (also Enter and Space for keyboard users)
         calendar.querySelectorAll('.threecal-mini-has-events').forEach(function(day) {
+            day.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.click();
+                }
+            });
             day.addEventListener('click', function(e) {
                 e.stopPropagation();
 
@@ -62,7 +68,7 @@
                 var dateFormatted = this.getAttribute('data-date-formatted');
 
                 // If only one event with URL, go directly
-                if (events.length === 1 && events[0].url) {
+                if (events.length === 1 && events[0].url && /^https?:\/\//i.test(events[0].url)) {
                     window.location.href = events[0].url;
                     return;
                 }
@@ -73,7 +79,7 @@
 
                 events.forEach(function(event) {
                     var eventEl;
-                    if (event.url) {
+                    if (event.url && /^https?:\/\//i.test(event.url)) {
                         eventEl = document.createElement('a');
                         eventEl.href = event.url;
                         eventEl.className = 'threecal-mini-popup-event';
@@ -82,12 +88,28 @@
                         eventEl.className = 'threecal-mini-popup-event no-link';
                     }
 
-                    eventEl.innerHTML =
-                        '<div class="threecal-mini-popup-event-color" style="background-color: ' + event.color + ';"></div>' +
-                        '<div class="threecal-mini-popup-event-info">' +
-                            '<div class="threecal-mini-popup-event-title">' + event.title + '</div>' +
-                            '<div class="threecal-mini-popup-event-time">' + event.time + '</div>' +
-                        '</div>';
+                    // Build with textContent only, never innerHTML (event data is untrusted).
+                    var colorEl = document.createElement('div');
+                    colorEl.className = 'threecal-mini-popup-event-color';
+                    if (/^#[0-9a-fA-F]{3,8}$/.test(event.color || '')) {
+                        colorEl.style.setProperty('--tc-ev', event.color);
+                    }
+
+                    var infoEl = document.createElement('div');
+                    infoEl.className = 'threecal-mini-popup-event-info';
+
+                    var titleEl = document.createElement('div');
+                    titleEl.className = 'threecal-mini-popup-event-title';
+                    titleEl.textContent = event.title || '';
+
+                    var timeEl = document.createElement('div');
+                    timeEl.className = 'threecal-mini-popup-event-time';
+                    timeEl.textContent = event.time || '';
+
+                    infoEl.appendChild(titleEl);
+                    infoEl.appendChild(timeEl);
+                    eventEl.appendChild(colorEl);
+                    eventEl.appendChild(infoEl);
 
                     popupEvents.appendChild(eventEl);
                 });

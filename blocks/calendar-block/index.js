@@ -6,13 +6,15 @@
     var el = element.createElement;
     var Fragment = element.Fragment;
     var InspectorControls = blockEditor.InspectorControls;
+    var useBlockProps = blockEditor.useBlockProps;
     var PanelBody = components.PanelBody;
     var SelectControl = components.SelectControl;
     var ServerSideRender = serverSideRender;
     var __ = i18n.__;
 
     // Register block
-    blocks.registerBlockType('3task-calendar/calendar', {
+    blocks.registerBlockType('threecal/calendar', {
+        apiVersion: 3,
         title: __('3task Calendar', '3task-calendar'),
         description: __('Display an event calendar', '3task-calendar'),
         icon: 'calendar-alt',
@@ -37,25 +39,23 @@
             },
             theme: {
                 type: 'string',
-                default: 'default'
+                default: ''
             }
         },
 
         edit: function(props) {
             var attributes = props.attributes;
+            var blockProps = useBlockProps({ className: 'threecal-block-preview' });
+            var data = window.threecalBlockData || { themes: [], categories: [] };
 
             var viewOptions = [
                 { label: __('Month View', '3task-calendar'), value: 'month' },
-                { label: __('List View', '3task-calendar'), value: 'list' }
+                { label: __('List View', '3task-calendar'), value: 'list' },
+                { label: __('Poster view (upcoming dates with images)', '3task-calendar'), value: 'poster' }
             ];
 
-            var themeOptions = [
-                { label: __('Default', '3task-calendar'), value: 'default' },
-                { label: __('Minimal', '3task-calendar'), value: 'minimal' },
-                { label: __('Gradient', '3task-calendar'), value: 'gradient' },
-                { label: __('Glassmorphism', '3task-calendar'), value: 'glassmorphism' },
-                { label: __('Boxed', '3task-calendar'), value: 'boxed' }
-            ];
+            var themeOptions = [{ label: __('Default design (settings)', '3task-calendar'), value: '' }].concat(data.themes || []);
+            var categoryOptions = [{ label: __('All Categories', '3task-calendar'), value: 0 }].concat(data.categories || []);
 
             return el(
                 Fragment,
@@ -69,46 +69,39 @@
                             title: __('Calendar Settings', '3task-calendar'),
                             initialOpen: true
                         },
-                        el(
-                            SelectControl,
-                            {
-                                label: __('View', '3task-calendar'),
-                                value: attributes.view,
-                                options: viewOptions,
-                                onChange: function(value) {
-                                    props.setAttributes({ view: value });
-                                }
+                        el(SelectControl, {
+                            label: __('View', '3task-calendar'),
+                            value: attributes.view,
+                            options: viewOptions,
+                            onChange: function(value) {
+                                props.setAttributes({ view: value });
                             }
-                        ),
-                        el(
-                            SelectControl,
-                            {
-                                label: __('Theme', '3task-calendar'),
-                                value: attributes.theme,
-                                options: themeOptions,
-                                onChange: function(value) {
-                                    props.setAttributes({ theme: value });
-                                }
+                        }),
+                        el(SelectControl, {
+                            label: __('Design', '3task-calendar'),
+                            value: attributes.theme,
+                            options: themeOptions,
+                            onChange: function(value) {
+                                props.setAttributes({ theme: value });
                             }
-                        )
+                        }),
+                        el(SelectControl, {
+                            label: __('Category', '3task-calendar'),
+                            value: attributes.category,
+                            options: categoryOptions,
+                            onChange: function(value) {
+                                props.setAttributes({ category: parseInt(value, 10) || 0 });
+                            }
+                        })
                     )
                 ),
                 el(
                     'div',
-                    { className: 'threecal-block-preview' },
-                    el(
-                        'div',
-                        { className: 'threecal-block-header' },
-                        el('span', { className: 'dashicons dashicons-calendar-alt' }),
-                        el('span', null, ' 3task Calendar'),
-                        el('span', { className: 'threecal-block-theme' }, ' — ' + attributes.theme)
-                    ),
-                    el(
-                        'div',
-                        { className: 'threecal-block-placeholder' },
-                        el('p', null, __('Calendar will be displayed here', '3task-calendar')),
-                        el('small', null, __('View:', '3task-calendar') + ' ' + attributes.view)
-                    )
+                    blockProps,
+                    el(ServerSideRender, {
+                        block: 'threecal/calendar',
+                        attributes: attributes
+                    })
                 )
             );
         },

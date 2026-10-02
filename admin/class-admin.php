@@ -70,7 +70,7 @@ class ThreeCal_Admin {
             $this->plugin_name . '-admin',
             THREECAL_PLUGIN_URL . 'admin/css/admin.css',
             array(),
-            $this->version
+            threecal_asset_version('admin/css/admin.css')
         );
     }
 
@@ -89,7 +89,7 @@ class ThreeCal_Admin {
             $this->plugin_name . '-admin',
             THREECAL_PLUGIN_URL . 'admin/js/admin.js',
             array('jquery', 'wp-color-picker'),
-            $this->version,
+            threecal_asset_version('admin/js/admin.js'),
             true
         );
 
@@ -116,7 +116,7 @@ class ThreeCal_Admin {
         add_menu_page(
             __( '3task Calendar', '3task-calendar' ),
             __( '3task Calendar', '3task-calendar' ),
-            'edit_posts',
+            'edit_threecal_events',
             '3task-calendar',
             array( $this, 'render_admin_page' ),
             'dashicons-calendar-alt',
@@ -130,32 +130,62 @@ class ThreeCal_Admin {
      * @return array Tabs configuration.
      */
     private function get_tabs() {
+        $counts = $this->get_tab_counts();
+
         return array(
-            'dashboard' => array(
+            'dashboard'  => array(
                 'title' => __( 'Dashboard', '3task-calendar' ),
-                'icon'  => 'dashicons-dashboard',
+                'icon'  => 'layout-dashboard',
             ),
-            'events' => array(
+            'events'     => array(
                 'title' => __( 'Events', '3task-calendar' ),
-                'icon'  => 'dashicons-calendar-alt',
+                'icon'  => 'calendar-event',
+                'count' => $counts['events'],
             ),
             'categories' => array(
                 'title' => __( 'Categories', '3task-calendar' ),
-                'icon'  => 'dashicons-category',
+                'icon'  => 'category',
+                'count' => $counts['categories'],
             ),
-            'locations' => array(
+            'locations'  => array(
                 'title' => __( 'Locations', '3task-calendar' ),
-                'icon'  => 'dashicons-location',
+                'icon'  => 'map-pin',
+                'count' => $counts['locations'],
             ),
-            'settings' => array(
+            'posts'      => array(
+                'title' => __( 'Posts', '3task-calendar' ),
+                'icon'  => 'article',
+            ),
+            'design'     => array(
+                'title' => __( 'Design', '3task-calendar' ),
+                'icon'  => 'palette',
+            ),
+            'settings'   => array(
                 'title' => __( 'Settings', '3task-calendar' ),
-                'icon'  => 'dashicons-admin-settings',
+                'icon'  => 'settings',
             ),
-            'help' => array(
+            'help'       => array(
                 'title' => __( 'Help', '3task-calendar' ),
-                'icon'  => 'dashicons-editor-help',
+                'icon'  => 'help-circle',
             ),
         );
+    }
+
+    /**
+     * Counts for the tab badges.
+     *
+     * @return array
+     */
+    private function get_tab_counts() {
+        global $wpdb;
+
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Counts from custom tables.
+        $events     = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}threecal_events WHERE parent_id IS NULL OR parent_id = 0" );
+        $categories = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}threecal_categories" );
+        $locations  = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}threecal_locations" );
+        // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+        return compact( 'events', 'categories', 'locations' );
     }
 
     /**
@@ -164,32 +194,48 @@ class ThreeCal_Admin {
     public function render_admin_page() {
         $tabs = $this->get_tabs();
         ?>
-        <div class="wrap threecal-wrap">
-            <!-- Header -->
-            <div class="threecal-header">
-                <div class="threecal-header-left">
-                    <span class="dashicons dashicons-calendar-alt threecal-logo-icon"></span>
-                    <h1 class="threecal-admin-title"><?php esc_html_e( '3task Calendar', '3task-calendar' ); ?></h1>
-                    <span class="threecal-version"><?php echo esc_html( 'v' . THREECAL_VERSION ); ?></span>
+        <div class="wrap threecal-wrap threecal-admin">
+            <h1 class="screen-reader-text"><?php esc_html_e( '3task Calendar', '3task-calendar' ); ?></h1>
+
+            <div class="threecal-admin-header">
+                <div class="threecal-admin-header-left">
+                    <div class="threecal-admin-icon"><?php ThreeCal_Icons::render( 'calendar-event', 34 ); ?></div>
+                    <div class="threecal-admin-title">
+                        <span class="threecal-admin-name"><?php esc_html_e( '3task Calendar', '3task-calendar' ); ?></span>
+                        <span class="threecal-admin-meta">
+                            <span class="threecal-admin-version"><?php echo esc_html( 'v' . THREECAL_VERSION ); ?></span>
+                            <span class="threecal-admin-status"><?php esc_html_e( 'Active', '3task-calendar' ); ?></span>
+                        </span>
+                    </div>
+                </div>
+                <div class="threecal-admin-header-right">
+                    <a class="threecal-admin-header-btn" href="<?php echo esc_url( admin_url( 'admin.php?page=3task-calendar&tab=help' ) ); ?>">
+                        <?php ThreeCal_Icons::render( 'book', 16 ); ?>
+                        <?php esc_html_e( 'Documentation', '3task-calendar' ); ?>
+                    </a>
+                    <a class="threecal-admin-header-btn" href="https://wordpress.org/support/plugin/3task-calendar/" target="_blank" rel="noopener">
+                        <?php ThreeCal_Icons::render( 'message-circle', 16 ); ?>
+                        <?php esc_html_e( 'Support', '3task-calendar' ); ?>
+                    </a>
                 </div>
             </div>
 
-            <!-- Navigation Tabs -->
-            <nav class="threecal-tabs nav-tab-wrapper">
+            <nav class="threecal-admin-tabs" aria-label="<?php esc_attr_e( '3task Calendar', '3task-calendar' ); ?>">
                 <?php foreach ( $tabs as $tab_key => $tab ) : ?>
-                    <?php
-                    $active = ( $this->current_tab === $tab_key ) ? 'nav-tab-active' : '';
-                    $url    = admin_url( 'admin.php?page=3task-calendar&tab=' . $tab_key );
-                    $class  = isset( $tab['class'] ) ? $tab['class'] : '';
-                    ?>
-                    <a href="<?php echo esc_url( $url ); ?>" class="nav-tab <?php echo esc_attr( $active . ' ' . $class ); ?>">
-                        <?php echo esc_html( $tab['title'] ); ?>
+                    <?php $active = ( $this->current_tab === $tab_key ); ?>
+                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=3task-calendar&tab=' . $tab_key ) ); ?>"
+                       class="threecal-admin-tab<?php echo $active ? ' is-active' : ''; ?>"
+                       <?php echo $active ? 'aria-current="page"' : ''; ?>>
+                        <?php ThreeCal_Icons::render( $tab['icon'], 18 ); ?>
+                        <span><?php echo esc_html( $tab['title'] ); ?></span>
+                        <?php if ( ! empty( $tab['count'] ) ) : ?>
+                            <span class="threecal-admin-badge"><?php echo esc_html( $tab['count'] ); ?></span>
+                        <?php endif; ?>
                     </a>
                 <?php endforeach; ?>
             </nav>
 
-            <!-- Content -->
-            <div class="threecal-tab-content">
+            <div class="threecal-tab-content threecal-admin-content">
                 <?php $this->render_tab_content(); ?>
             </div>
         </div>
@@ -197,22 +243,10 @@ class ThreeCal_Admin {
     }
 
     /**
-     * Get upgrade URL.
-     *
-     * @return string Upgrade URL.
-     */
-    public function get_upgrade_url() {
-        return 'https://3task.de/threecal-pro/';
-    }
-
-    /**
      * Render tab content.
      */
     private function render_tab_content() {
         switch ( $this->current_tab ) {
-            case 'dashboard':
-                $this->render_dashboard();
-                break;
             case 'events':
                 $this->render_events();
                 break;
@@ -221,6 +255,12 @@ class ThreeCal_Admin {
                 break;
             case 'locations':
                 $this->render_locations();
+                break;
+            case 'design':
+                $this->render_design();
+                break;
+            case 'posts':
+                ThreeCal_Post_Dates::render_settings_page();
                 break;
             case 'settings':
                 $this->render_settings();
@@ -237,44 +277,167 @@ class ThreeCal_Admin {
      * Render dashboard tab.
      */
     private function render_dashboard() {
-        $stats = $this->get_event_stats();
+        $stats    = $this->get_event_stats();
+        $counts   = $this->get_tab_counts();
+        $upcoming = ThreeCal_Event::get_upcoming( 5 );
+        $cats     = ThreeCal_Event::get_categories_for_events( wp_list_pluck( $upcoming, 'id' ) );
+        $new_url  = admin_url( 'admin.php?page=3task-calendar&tab=events&action=new' );
         ?>
-        <div class="threecal-stats-grid">
-            <div class="threecal-stat-card">
-                <div class="stat-label"><?php esc_html_e( 'Total Events', '3task-calendar' ); ?></div>
-                <div class="stat-value"><?php echo esc_html( $stats['total_events'] ); ?></div>
+        <?php if ( 0 === (int) $stats['total_events'] ) : ?>
+        <div class="threecal-onboarding">
+            <div class="threecal-onboarding-icon"><?php ThreeCal_Icons::render( 'calendar-plus', 28 ); ?></div>
+            <div class="threecal-onboarding-text">
+                <h2><?php esc_html_e( 'Welcome to 3task Calendar', '3task-calendar' ); ?></h2>
+                <p><?php esc_html_e( 'Create and manage events for your WordPress website. Get started by creating your first event!', '3task-calendar' ); ?></p>
             </div>
-            <div class="threecal-stat-card success">
-                <div class="stat-label"><?php esc_html_e( 'Published Events', '3task-calendar' ); ?></div>
-                <div class="stat-value"><?php echo esc_html( $stats['published_events'] ); ?></div>
+            <a class="threecal-btn-primary" href="<?php echo esc_url( $new_url ); ?>"><?php ThreeCal_Icons::render( 'plus', 16 ); ?><?php esc_html_e( 'Create Your First Event', '3task-calendar' ); ?></a>
+        </div>
+        <?php endif; ?>
+
+        <div class="threecal-kpis">
+            <div class="threecal-kpi kpi-blue">
+                <div class="threecal-kpi-head"><?php ThreeCal_Icons::render( 'calendar-event', 22 ); ?></div>
+                <div class="threecal-kpi-value"><?php echo esc_html( $stats['total_events'] ); ?></div>
+                <div class="threecal-kpi-label"><?php esc_html_e( 'Total Events', '3task-calendar' ); ?></div>
             </div>
-            <div class="threecal-stat-card warning">
-                <div class="stat-label"><?php esc_html_e( 'Draft Events', '3task-calendar' ); ?></div>
-                <div class="stat-value"><?php echo esc_html( $stats['draft_events'] ); ?></div>
+            <div class="threecal-kpi kpi-green">
+                <div class="threecal-kpi-head"><?php ThreeCal_Icons::render( 'calendar-check', 22 ); ?></div>
+                <div class="threecal-kpi-value"><?php echo esc_html( $stats['published_events'] ); ?></div>
+                <div class="threecal-kpi-label"><?php esc_html_e( 'Published Events', '3task-calendar' ); ?></div>
             </div>
-            <div class="threecal-stat-card">
-                <div class="stat-label"><?php esc_html_e( 'Categories', '3task-calendar' ); ?></div>
-                <div class="stat-value"><?php echo esc_html( $stats['total_categories'] ); ?></div>
+            <div class="threecal-kpi kpi-orange">
+                <div class="threecal-kpi-head"><?php ThreeCal_Icons::render( 'pencil-plus', 22 ); ?></div>
+                <div class="threecal-kpi-value"><?php echo esc_html( $stats['draft_events'] ); ?></div>
+                <div class="threecal-kpi-label"><?php esc_html_e( 'Draft Events', '3task-calendar' ); ?></div>
+            </div>
+            <div class="threecal-kpi kpi-teal">
+                <div class="threecal-kpi-head"><?php ThreeCal_Icons::render( 'category', 22 ); ?></div>
+                <div class="threecal-kpi-value"><?php echo esc_html( $counts['categories'] ); ?></div>
+                <div class="threecal-kpi-label"><?php esc_html_e( 'Categories', '3task-calendar' ); ?></div>
             </div>
         </div>
 
-        <div class="threecal-card">
-            <h3><?php esc_html_e( 'Welcome to 3task Calendar', '3task-calendar' ); ?></h3>
-            <p><?php esc_html_e( 'Create and manage events for your WordPress website. Get started by creating your first event!', '3task-calendar' ); ?></p>
+        <div class="threecal-admin-grid">
+            <section class="threecal-panel">
+                <h2 class="threecal-panel-title"><?php ThreeCal_Icons::render( 'calendar-stats', 20 ); ?><?php esc_html_e( 'Upcoming Events', '3task-calendar' ); ?></h2>
+                <?php if ( empty( $upcoming ) ) : ?>
+                    <p class="threecal-muted"><?php esc_html_e( 'No upcoming events.', '3task-calendar' ); ?></p>
+                <?php else : ?>
+                <ul class="threecal-admin-upcoming">
+                    <?php foreach ( $upcoming as $event ) :
+                        $color = ThreeCal_Themes::event_color( $event, isset( $cats[ $event->id ] ) ? $cats[ $event->id ] : array() );
+                        $start = strtotime( $event->start_date );
+                        $edit  = admin_url( 'admin.php?page=3task-calendar&tab=events&action=edit&event=' . ( $event->parent_id ? $event->parent_id : $event->id ) );
+                        $from  = is_array( $event->settings ) ? $event->settings : json_decode( (string) $event->settings, true );
+                        if ( ! empty( $from['post_id'] ) && get_edit_post_link( (int) $from['post_id'] ) ) {
+                            $edit = get_edit_post_link( (int) $from['post_id'], 'raw' );
+                        }
+                        ?>
+                    <li style="<?php echo esc_attr( ThreeCal_Themes::event_style( $color ) ); ?>">
+                        <span class="threecal-admin-date">
+                            <span><?php echo esc_html( date_i18n( 'M', $start ) ); ?></span>
+                            <strong><?php echo esc_html( date_i18n( 'j', $start ) ); ?></strong>
+                        </span>
+                        <span class="threecal-admin-upcoming-text">
+                            <a href="<?php echo esc_url( $edit ); ?>"><?php echo esc_html( $event->title ); ?></a>
+                            <span class="threecal-muted">
+                                <?php echo esc_html( $event->all_day ? __( 'All day', '3task-calendar' ) : date_i18n( get_option( 'time_format' ), $start ) ); ?>
+                                <?php if ( $event->parent_id ) : ?> · <?php esc_html_e( 'Series', '3task-calendar' ); ?><?php endif; ?>
+                            </span>
+                        </span>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+                <?php endif; ?>
+            </section>
 
-            <div style="margin-top: 20px;">
-                <a href="<?php echo esc_url( admin_url( 'admin.php?page=3task-calendar&tab=events&action=new' ) ); ?>" class="button button-primary">
-                    <span class="dashicons dashicons-plus-alt"></span>
-                    <?php esc_html_e( 'Create Your First Event', '3task-calendar' ); ?>
-                </a>
+            <div class="threecal-admin-side">
+                <section class="threecal-panel">
+                    <h2 class="threecal-panel-title"><?php ThreeCal_Icons::render( 'layout-dashboard', 20 ); ?><?php esc_html_e( 'Quick Actions', '3task-calendar' ); ?></h2>
+                    <div class="threecal-quick">
+                        <a href="<?php echo esc_url( $new_url ); ?>"><span class="threecal-quick-icon"><?php ThreeCal_Icons::render( 'calendar-plus', 22 ); ?></span><?php esc_html_e( 'Add New Event', '3task-calendar' ); ?></a>
+                        <a href="<?php echo esc_url( admin_url( 'admin.php?page=3task-calendar&tab=categories' ) ); ?>"><span class="threecal-quick-icon"><?php ThreeCal_Icons::render( 'category', 22 ); ?></span><?php esc_html_e( 'Categories', '3task-calendar' ); ?></a>
+                        <a href="<?php echo esc_url( admin_url( 'admin.php?page=3task-calendar&tab=design' ) ); ?>"><span class="threecal-quick-icon"><?php ThreeCal_Icons::render( 'palette', 22 ); ?></span><?php esc_html_e( 'Choose design', '3task-calendar' ); ?></a>
+                        <a href="<?php echo esc_url( admin_url( 'admin.php?page=3task-calendar&tab=help' ) ); ?>"><span class="threecal-quick-icon"><?php ThreeCal_Icons::render( 'book', 22 ); ?></span><?php esc_html_e( 'Shortcodes', '3task-calendar' ); ?></a>
+                    </div>
+                </section>
+
+                <section class="threecal-panel threecal-panel-tint">
+                    <span class="threecal-pill"><?php esc_html_e( 'Included for free', '3task-calendar' ); ?></span>
+                    <ul class="threecal-feature-chips">
+                        <li><?php ThreeCal_Icons::render( 'repeat', 16 ); ?><?php esc_html_e( 'Recurring events', '3task-calendar' ); ?></li>
+                        <li><?php ThreeCal_Icons::render( 'calendar-plus', 16 ); ?><?php esc_html_e( 'iCal subscription', '3task-calendar' ); ?></li>
+                        <li><?php ThreeCal_Icons::render( 'palette', 16 ); ?><?php esc_html_e( '3 designs', '3task-calendar' ); ?></li>
+                        <li><?php ThreeCal_Icons::render( 'route', 16 ); ?><?php esc_html_e( 'Route without Google', '3task-calendar' ); ?></li>
+                        <li><?php ThreeCal_Icons::render( 'calendar-check', 16 ); ?><?php esc_html_e( 'Event schema (SEO)', '3task-calendar' ); ?></li>
+                    </ul>
+                </section>
             </div>
         </div>
+        <?php
+    }
 
-        <!-- Mini Calendar -->
-        <div class="threecal-card">
-            <h3><?php esc_html_e( 'Upcoming Events', '3task-calendar' ); ?></h3>
-            <?php $this->render_mini_calendar(); ?>
-        </div>
+    /**
+     * Render design tab: default design and accent color.
+     */
+    private function render_design() {
+        if ( ! current_user_can( 'threecal_settings' ) ) {
+            echo '<div class="notice notice-error"><p>' . esc_html__( 'You do not have permission to change the calendar settings.', '3task-calendar' ) . '</p></div>';
+            return;
+        }
+
+        $themes = ThreeCal_Themes::all();
+
+        if ( isset( $_POST['threecal_save_design'] ) ) {
+            check_admin_referer( 'threecal_design' );
+            $settings = (array) get_option( 'threecal_settings', array() );
+            $theme    = isset( $_POST['default_theme'] ) ? sanitize_key( wp_unslash( $_POST['default_theme'] ) ) : 'default';
+            $settings['default_theme'] = isset( $themes[ $theme ] ) ? $theme : 'default';
+            $accent   = isset( $_POST['accent_color'] ) ? sanitize_hex_color( wp_unslash( $_POST['accent_color'] ) ) : '';
+            $settings['accent_color']  = $accent ? $accent : '';
+            update_option( 'threecal_settings', $settings );
+            echo '<div class="notice notice-success"><p>' . esc_html__( 'Settings saved!', '3task-calendar' ) . '</p></div>';
+        }
+
+        $current  = ThreeCal_Themes::normalize( '' );
+        $settings = (array) get_option( 'threecal_settings', array() );
+        $accent   = isset( $settings['accent_color'] ) ? $settings['accent_color'] : '';
+        $renderer = new ThreeCal_Calendar_Renderer();
+        wp_enqueue_style( 'threecal-public', THREECAL_PLUGIN_URL . 'public/css/threecal.css', array(), threecal_asset_version( 'public/css/threecal.css' ) );
+        wp_enqueue_style( 'threecal-mini', THREECAL_PLUGIN_URL . 'public/css/threecal-mini.css', array(), threecal_asset_version( 'public/css/threecal-mini.css' ) );
+        ?>
+        <form method="post" class="threecal-design-form">
+            <?php wp_nonce_field( 'threecal_design' ); ?>
+            <section class="threecal-panel">
+                <h2 class="threecal-panel-title"><?php ThreeCal_Icons::render( 'palette', 20 ); ?><?php esc_html_e( 'Default design', '3task-calendar' ); ?></h2>
+                <p class="threecal-muted"><?php esc_html_e( 'Used by every calendar without its own theme attribute. A single calendar can still use another design, e.g. [threecal theme="dark"].', '3task-calendar' ); ?></p>
+                <p class="threecal-muted"><?php esc_html_e( 'Elements without own design, such as the mini calendar in the sidebar, take the design of the calendar on the same page.', '3task-calendar' ); ?></p>
+                <div class="threecal-design-grid">
+                    <?php foreach ( $themes as $key => $theme ) : ?>
+                    <label class="threecal-design-option<?php echo $current === $key ? ' is-selected' : ''; ?>">
+                        <input type="radio" name="default_theme" value="<?php echo esc_attr( $key ); ?>" <?php checked( $current, $key ); ?>>
+                        <span class="threecal-design-preview">
+                            <?php
+                            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped inside the renderer.
+                            echo $renderer->render_mini_calendar( array( 'theme' => $key, 'show_nav' => false, 'show_today' => false ) );
+                            ?>
+                        </span>
+                        <span class="threecal-design-name"><?php echo esc_html( $theme['label'] ); ?> <code><?php echo esc_html( $key ); ?></code></span>
+                        <span class="threecal-design-desc"><?php echo esc_html( $theme['description'] ); ?></span>
+                    </label>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+
+            <section class="threecal-panel">
+                <h2 class="threecal-panel-title"><?php ThreeCal_Icons::render( 'palette', 20 ); ?><?php esc_html_e( 'Accent color', '3task-calendar' ); ?></h2>
+                <p class="threecal-muted"><?php esc_html_e( 'Buttons, today marker and events without category color use this color. Leave empty to use the color of the design.', '3task-calendar' ); ?></p>
+                <input type="text" name="accent_color" class="threecal-color-picker" value="<?php echo esc_attr( $accent ); ?>" data-default-color="">
+                <p class="threecal-muted"><?php esc_html_e( 'Events take the color of their first category automatically.', '3task-calendar' ); ?></p>
+            </section>
+
+            <p><button type="submit" name="threecal_save_design" class="threecal-btn-primary"><?php esc_html_e( 'Save design', '3task-calendar' ); ?></button></p>
+        </form>
         <?php
     }
 
@@ -297,45 +460,108 @@ class ThreeCal_Admin {
             return;
         }
 
-        // List all events
-        $events = $this->get_events();
+        // List events (repetitions of a series are managed through their first event).
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display filter only.
+        $scope  = isset( $_GET['scope'] ) ? sanitize_key( wp_unslash( $_GET['scope'] ) ) : 'upcoming';
+        $scope  = in_array( $scope, array( 'upcoming', 'past', 'all' ), true ) ? $scope : 'upcoming';
+        $events = $this->get_events( $scope );
+
+        // Dates that come from posts are kept in the posts, not in this list.
+        $from_posts = 0;
+        foreach ( $events as $index => $row ) {
+            $row_settings = json_decode( (string) $row->settings, true );
+            if ( ! empty( $row_settings['post_id'] ) ) {
+                $from_posts++;
+                unset( $events[ $index ] );
+            }
+        }
+        $events = array_values( $events );
+        $cats   = ThreeCal_Event::get_categories_for_events( wp_list_pluck( $events, 'id' ) );
+        $rules  = ThreeCal_Event::recurrence_options();
+        $scopes = array(
+            'upcoming' => __( 'Upcoming', '3task-calendar' ),
+            'past'     => __( 'Past', '3task-calendar' ),
+            'all'      => __( 'All', '3task-calendar' ),
+        );
+        $status_labels = array(
+            'published' => __( 'Published', '3task-calendar' ),
+            'draft'     => __( 'Draft', '3task-calendar' ),
+            'cancelled' => __( 'Cancelled', '3task-calendar' ),
+        );
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Message param is for display only.
+        $message = isset( $_GET['message'] ) ? sanitize_key( wp_unslash( $_GET['message'] ) ) : '';
         ?>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h2><?php esc_html_e( 'All Events', '3task-calendar' ); ?></h2>
-            <a href="<?php echo esc_url( admin_url( 'admin.php?page=3task-calendar&tab=events&action=new' ) ); ?>" class="button button-primary">
-                <span class="dashicons dashicons-plus-alt"></span>
+        <?php if ( $from_posts ) : ?>
+        <div class="notice notice-info inline threecal-from-posts-note"><p>
+            <?php
+            /* translators: %s: number of dates */
+            echo esc_html( sprintf( _n( '%s date comes from a post and is edited there:', '%s dates come from posts and are edited there:', $from_posts, '3task-calendar' ), number_format_i18n( $from_posts ) ) );
+            foreach ( ThreeCal_Post_Dates::enabled_types() as $type_key => $type_settings ) {
+                $type_object = get_post_type_object( $type_key );
+                if ( $type_object ) {
+                    echo ' <a href="' . esc_url( admin_url( 'edit.php?post_type=' . $type_key . '&orderby=threecal_date&order=asc' ) ) . '">' . esc_html( $type_object->labels->name ) . '</a>';
+                }
+            }
+            ?>
+        </p></div>
+        <?php endif; ?>
+        <?php if ( 'deleted' === $message ) : ?>
+        <div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Event deleted.', '3task-calendar' ); ?></p></div>
+        <?php elseif ( 'date_remove' === $message ) : ?>
+        <div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'The date was removed from the series.', '3task-calendar' ); ?></p></div>
+        <?php endif; ?>
+        <div class="threecal-list-toolbar">
+            <div class="threecal-segmented" role="group" aria-label="<?php esc_attr_e( 'Filter', '3task-calendar' ); ?>">
+                <?php foreach ( $scopes as $key => $label ) : ?>
+                <a href="<?php echo esc_url( admin_url( 'admin.php?page=3task-calendar&tab=events&scope=' . $key ) ); ?>" class="<?php echo $scope === $key ? 'is-active' : ''; ?>"<?php echo $scope === $key ? ' aria-current="page"' : ''; ?>><?php echo esc_html( $label ); ?></a>
+                <?php endforeach; ?>
+            </div>
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=3task-calendar&tab=events&action=new' ) ); ?>" class="threecal-btn-primary">
+                <?php ThreeCal_Icons::render( 'plus', 16 ); ?>
                 <?php esc_html_e( 'Add New Event', '3task-calendar' ); ?>
             </a>
         </div>
 
-        <?php if (empty($events)): ?>
-            <div class="threecal-card threecal-empty-state">
-                <div class="dashicons dashicons-calendar-alt"></div>
+        <?php if ( empty( $events ) ) : ?>
+            <div class="threecal-empty">
+                <?php ThreeCal_Icons::render( 'calendar-plus', 40 ); ?>
                 <p><?php esc_html_e( 'No events found. Create your first event to get started!', '3task-calendar' ); ?></p>
             </div>
-        <?php else: ?>
-            <div class="threecal-events-grid">
-                <?php foreach ($events as $event): ?>
-                    <div class="threecal-card threecal-event-card">
-                        <div class="event-date">
-                            <span class="dashicons dashicons-clock"></span>
-                            <?php echo esc_html( wp_date( 'M j, Y', strtotime( $event->start_date ) ) ); ?>
-                        </div>
-                        <div class="event-title"><?php echo esc_html($event->title); ?></div>
-                        <div class="event-description"><?php echo esc_html(substr($event->description, 0, 100)) . '...'; ?></div>
-                        <div style="margin-top: 16px; display: flex; gap: 8px;">
-                            <a href="<?php echo esc_url( admin_url( 'admin.php?page=3task-calendar&tab=events&action=edit&event=' . $event->id ) ); ?>" class="button button-small">
-                                <?php esc_html_e( 'Edit', '3task-calendar' ); ?>
-                            </a>
-                            <a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=3task-calendar&action=delete&id=' . $event->id ), 'threecal_delete_' . $event->id ) ); ?>"
-                               class="button button-small action-btn danger threecal-delete"
-                               onclick="return confirm('<?php esc_attr_e( 'Are you sure you want to delete this event?', '3task-calendar' ); ?>');">
-                                <?php esc_html_e( 'Delete', '3task-calendar' ); ?>
-                            </a>
-                        </div>
-                    </div>
+        <?php else : ?>
+            <ul class="threecal-event-rows">
+                <?php foreach ( $events as $row ) :
+                    $event    = new ThreeCal_Event( $row );
+                    $ecats    = isset( $cats[ $event->id ] ) ? $cats[ $event->id ] : array();
+                    $color    = ThreeCal_Themes::event_color( $event, $ecats );
+                    $start    = strtotime( $event->start_date );
+                    $edit_url = admin_url( 'admin.php?page=3task-calendar&tab=events&action=edit&event=' . $event->id );
+                    $del_url  = wp_nonce_url( admin_url( 'admin.php?page=3task-calendar&tab=events&action=delete&id=' . $event->id ), 'threecal_delete_' . $event->id );
+                    ?>
+                <li class="threecal-event-row status-<?php echo esc_attr( $event->status ); ?>" style="<?php echo esc_attr( ThreeCal_Themes::event_style( $color ) ); ?>">
+                    <span class="threecal-admin-date">
+                        <span><?php echo esc_html( date_i18n( 'M', $start ) ); ?></span>
+                        <strong><?php echo esc_html( date_i18n( 'j', $start ) ); ?></strong>
+                    </span>
+                    <span class="threecal-event-row-main">
+                        <a class="threecal-event-row-title" href="<?php echo esc_url( $edit_url ); ?>"><?php echo esc_html( $event->title ); ?></a>
+                        <span class="threecal-event-row-meta">
+                            <span><?php ThreeCal_Icons::render( 'clock', 14 ); ?><?php echo esc_html( date_i18n( get_option( 'date_format' ), $start ) . ( $event->all_day ? ' · ' . __( 'All day', '3task-calendar' ) : ' · ' . date_i18n( get_option( 'time_format' ), $start ) ) ); ?></span>
+                            <?php if ( ! empty( $event->recurrence_rule ) && isset( $rules[ $event->recurrence_rule ] ) ) : ?>
+                            <span class="threecal-series-badge"><?php ThreeCal_Icons::render( 'repeat', 12 ); ?><?php echo esc_html( $rules[ $event->recurrence_rule ] ); ?><?php if ( $event->recurrence_end ) : ?>, <?php echo esc_html( sprintf( /* translators: %s: end date of a series */ __( 'until %s', '3task-calendar' ), date_i18n( get_option( 'date_format' ), strtotime( $event->recurrence_end ) ) ) ); ?><?php endif; ?></span>
+                            <?php endif; ?>
+                            <?php foreach ( $ecats as $cat ) : ?>
+                            <span class="threecal-cat-chip" style="<?php echo esc_attr( ThreeCal_Themes::event_style( sanitize_hex_color( (string) $cat->color ) ) ); ?>"><?php echo esc_html( $cat->name ); ?></span>
+                            <?php endforeach; ?>
+                        </span>
+                    </span>
+                    <span class="threecal-status threecal-status-<?php echo esc_attr( $event->status ); ?>"><?php echo esc_html( isset( $status_labels[ $event->status ] ) ? $status_labels[ $event->status ] : $event->status ); ?></span>
+                    <span class="threecal-event-row-actions">
+                        <a class="threecal-icon-btn" href="<?php echo esc_url( $edit_url ); ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: %s: event title */ __( 'Edit %s', '3task-calendar' ), $event->title ) ); ?>"><?php ThreeCal_Icons::render( 'pencil-plus', 18 ); ?></a>
+                        <a class="threecal-icon-btn is-danger" href="<?php echo esc_url( $del_url ); ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: %s: event title */ __( 'Delete %s', '3task-calendar' ), $event->title ) ); ?>" onclick="return confirm('<?php echo esc_js( __( 'Are you sure you want to delete this event?', '3task-calendar' ) ); ?>');"><?php ThreeCal_Icons::render( 'x', 18 ); ?></a>
+                    </span>
+                </li>
                 <?php endforeach; ?>
-            </div>
+            </ul>
         <?php endif; ?>
         <?php
     }
@@ -360,32 +586,41 @@ class ThreeCal_Admin {
      * Render settings tab
      */
     private function render_settings() {
+        if ( ! current_user_can( 'threecal_settings' ) ) {
+            echo '<div class="notice notice-error"><p>' . esc_html__( 'You do not have permission to change the calendar settings.', '3task-calendar' ) . '</p></div>';
+            return;
+        }
+
         if ( isset( $_POST['submit'] ) ) {
             check_admin_referer( 'threecal_settings' );
 
-            $settings = array(
-                'date_format'         => isset( $_POST['date_format'] ) ? sanitize_text_field( wp_unslash( $_POST['date_format'] ) ) : get_option( 'date_format' ),
-                'time_format'         => isset( $_POST['time_format'] ) ? sanitize_text_field( wp_unslash( $_POST['time_format'] ) ) : get_option( 'time_format' ),
-                'week_starts_on'      => isset( $_POST['week_starts_on'] ) ? absint( $_POST['week_starts_on'] ) : 1,
-                'default_view'        => isset( $_POST['default_view'] ) ? sanitize_text_field( wp_unslash( $_POST['default_view'] ) ) : 'month',
-                'show_event_time'     => ! empty( $_POST['show_event_time'] ),
-                'show_event_location' => ! empty( $_POST['show_event_location'] ),
-                'events_per_page'     => isset( $_POST['events_per_page'] ) ? absint( $_POST['events_per_page'] ) : 10,
-            );
-            
+            // Merge with the stored settings so fields that are not part of this form stay untouched.
+            $settings = (array) get_option( 'threecal_settings', array() );
+
+            $settings['date_format']              = isset( $_POST['date_format'] ) ? sanitize_text_field( wp_unslash( $_POST['date_format'] ) ) : get_option( 'date_format' );
+            $settings['time_format']              = isset( $_POST['time_format'] ) ? sanitize_text_field( wp_unslash( $_POST['time_format'] ) ) : get_option( 'time_format' );
+            $settings['week_starts_on']           = ( isset( $_POST['week_starts_on'] ) && 0 === absint( $_POST['week_starts_on'] ) ) ? 0 : 1;
+            $settings['show_event_time']          = ! empty( $_POST['show_event_time'] );
+            $settings['show_event_location']      = ! empty( $_POST['show_event_location'] );
+            $settings['enable_schema']            = ! empty( $_POST['enable_schema'] );
+            $settings['delete_data_on_uninstall'] = ! empty( $_POST['delete_data_on_uninstall'] );
+
             update_option( 'threecal_settings', $settings );
             echo '<div class="notice notice-success"><p>' . esc_html__( 'Settings saved!', '3task-calendar' ) . '</p></div>';
         }
 
-        $settings = get_option('threecal_settings', array(
-            'date_format' => get_option('date_format'),
-            'time_format' => get_option('time_format'),
-            'week_starts_on' => 1,
-            'default_view' => 'month',
-            'show_event_time' => true,
-            'show_event_location' => true,
-            'events_per_page' => 10
-        ));
+        $settings = wp_parse_args(
+            (array) get_option( 'threecal_settings', array() ),
+            array(
+                'date_format'              => get_option( 'date_format' ),
+                'time_format'              => get_option( 'time_format' ),
+                'week_starts_on'           => 1,
+                'show_event_time'          => true,
+                'show_event_location'      => true,
+                'enable_schema'            => true,
+                'delete_data_on_uninstall' => false,
+            )
+        );
         ?>
         <form method="post">
             <?php wp_nonce_field('threecal_settings'); ?>
@@ -427,6 +662,24 @@ class ThreeCal_Admin {
                         <th scope="row"><?php esc_html_e( 'Show Event Location', '3task-calendar' ); ?></th>
                         <td>
                             <input type="checkbox" name="show_event_location" value="1" <?php checked($settings['show_event_location']); ?> />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e( 'Event Schema (SEO)', '3task-calendar' ); ?></th>
+                        <td>
+                            <label>
+                                <input type="checkbox" name="enable_schema" value="1" <?php checked($settings['enable_schema']); ?> />
+                                <?php esc_html_e( 'Add Schema.org event markup to pages with a calendar.', '3task-calendar' ); ?>
+                            </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e( 'Uninstall', '3task-calendar' ); ?></th>
+                        <td>
+                            <label>
+                                <input type="checkbox" name="delete_data_on_uninstall" value="1" <?php checked($settings['delete_data_on_uninstall']); ?> />
+                                <?php esc_html_e( 'Delete all events, categories, locations and settings when the plugin is deleted.', '3task-calendar' ); ?>
+                            </label>
                         </td>
                     </tr>
                 </table>
@@ -478,7 +731,7 @@ class ThreeCal_Admin {
                         <tr>
                             <td><code>view</code></td>
                             <td>month</td>
-                            <td><?php esc_html_e( 'Calendar view: month, week, or day', '3task-calendar' ); ?></td>
+                            <td><?php esc_html_e( 'Calendar view: month or list', '3task-calendar' ); ?></td>
                         </tr>
                         <tr>
                             <td><code>category</code></td>
@@ -547,12 +800,12 @@ class ThreeCal_Admin {
                         <tr>
                             <td><code>limit</code></td>
                             <td>10</td>
-                            <td><?php esc_html_e( 'Number of events to display', '3task-calendar' ); ?></td>
+                            <td><?php esc_html_e( 'Number of events per page', '3task-calendar' ); ?></td>
                         </tr>
                         <tr>
                             <td><code>view</code></td>
                             <td>list</td>
-                            <td><?php esc_html_e( 'Display style: list or grid', '3task-calendar' ); ?></td>
+                            <td><?php esc_html_e( 'Display style: list, grid, compact or poster', '3task-calendar' ); ?></td>
                         </tr>
                         <tr>
                             <td><code>show_past</code></td>
@@ -567,10 +820,26 @@ class ThreeCal_Admin {
                         <tr>
                             <td><code>columns</code></td>
                             <td>3</td>
-                            <td><?php esc_html_e( 'Number of columns in grid view', '3task-calendar' ); ?></td>
+                            <td><?php esc_html_e( 'Number of columns in grid and poster view', '3task-calendar' ); ?></td>
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Dates from posts -->
+            <div class="threecal-card">
+                <h2><?php esc_html_e( 'Dates from posts', '3task-calendar' ); ?></h2>
+                <p>
+                    <?php esc_html_e( 'Set a date while you write a post and the post appears in the calendar. Switch it on for posts, pages or custom post types in the Posts tab, where you can also use a date field you already have.', '3task-calendar' ); ?>
+                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=3task-calendar&tab=posts' ) ); ?>"><?php esc_html_e( 'Open the Posts tab', '3task-calendar' ); ?></a>
+                </p>
+
+                <h4><?php esc_html_e( 'Date of a post with "Add to my calendar"', '3task-calendar' ); ?></h4>
+                <code class="threecal-code-block">[threecal_post_date]</code>
+                <p class="description"><?php esc_html_e( 'Inside a post it shows the date of that post. With id="123" it shows the date of another post, with theme="accent" another design. The block is called "Date of this post".', '3task-calendar' ); ?></p>
+
+                <h4><?php esc_html_e( 'Posters of the upcoming dates', '3task-calendar' ); ?></h4>
+                <code class="threecal-code-block">[threecal_events view="poster" category="1" columns="4"]</code>
             </div>
 
             <!-- Upcoming Events Shortcode -->
@@ -703,7 +972,7 @@ class ThreeCal_Admin {
 
                 <div class="threecal-help-tip" style="background: #d4edda; border-left: 4px solid #28a745; padding: 12px 15px; margin-top: 15px;">
                     <strong><?php esc_html_e( 'Widget Tip:', '3task-calendar' ); ?></strong>
-                    <?php esc_html_e( 'This is the ideal shortcode for sidebars! Days with events show colored dots. Hover over them to see event titles.', '3task-calendar' ); ?>
+                    <?php esc_html_e( 'This is the ideal shortcode for sidebars! Days with events show colored dots. Click a day to see its events.', '3task-calendar' ); ?>
                 </div>
             </div>
 
@@ -721,14 +990,14 @@ class ThreeCal_Admin {
 
                 <h4><?php esc_html_e( 'Classic Widgets', '3task-calendar' ); ?></h4>
                 <ol>
-                    <li><?php esc_html_e( 'Add a "Text" or "Custom HTML" widget', '3task-calendar' ); ?></li>
+                    <li><?php esc_html_e( 'Add a "Text" widget (the "Custom HTML" widget does not run shortcodes)', '3task-calendar' ); ?></li>
                     <li><?php esc_html_e( 'Enter the shortcode in the content area', '3task-calendar' ); ?></li>
                 </ol>
 
                 <div class="threecal-help-tip" style="background: #f0f6fc; border-left: 4px solid #3788d8; padding: 12px 15px; margin-top: 15px;">
                     <strong><?php esc_html_e( 'Best Widget Shortcodes:', '3task-calendar' ); ?></strong><br>
-                    <code>[threecal_mini]</code> - <?php esc_html_e( 'Compact month view with event markers (recommended!)', '3task-calendar' ); ?><br>
-                    <code>[threecal_upcoming limit="3"]</code> - <?php esc_html_e( 'Simple list of upcoming events', '3task-calendar' ); ?>
+                    <code>[threecal_mini]</code>: <?php esc_html_e( 'Compact month view with event markers (recommended!)', '3task-calendar' ); ?><br>
+                    <code>[threecal_upcoming limit="3"]</code>: <?php esc_html_e( 'Simple list of upcoming events', '3task-calendar' ); ?>
                 </div>
             </div>
 
@@ -740,7 +1009,7 @@ class ThreeCal_Admin {
                     <div class="feature-item">
                         <span class="dashicons dashicons-calendar-alt" style="color: #3788d8;"></span>
                         <strong><?php esc_html_e( 'Interactive Calendar', '3task-calendar' ); ?></strong>
-                        <p><?php esc_html_e( 'Month, week, and day views with navigation', '3task-calendar' ); ?></p>
+                        <p><?php esc_html_e( 'Month and list views with navigation', '3task-calendar' ); ?></p>
                     </div>
                     <div class="feature-item">
                         <span class="dashicons dashicons-category" style="color: #3788d8;"></span>
@@ -750,12 +1019,12 @@ class ThreeCal_Admin {
                     <div class="feature-item">
                         <span class="dashicons dashicons-location" style="color: #3788d8;"></span>
                         <strong><?php esc_html_e( 'Locations', '3task-calendar' ); ?></strong>
-                        <p><?php esc_html_e( 'Add venues with address and map integration', '3task-calendar' ); ?></p>
+                        <p><?php esc_html_e( 'Add venues with their address', '3task-calendar' ); ?></p>
                     </div>
                     <div class="feature-item">
                         <span class="dashicons dashicons-smartphone" style="color: #3788d8;"></span>
                         <strong><?php esc_html_e( 'Responsive Design', '3task-calendar' ); ?></strong>
-                        <p><?php esc_html_e( 'Works perfectly on all devices', '3task-calendar' ); ?></p>
+                        <p><?php esc_html_e( 'Adapts to small screens', '3task-calendar' ); ?></p>
                     </div>
                     <div class="feature-item">
                         <span class="dashicons dashicons-filter" style="color: #3788d8;"></span>
@@ -765,7 +1034,7 @@ class ThreeCal_Admin {
                     <div class="feature-item">
                         <span class="dashicons dashicons-admin-appearance" style="color: #3788d8;"></span>
                         <strong><?php esc_html_e( 'Customizable', '3task-calendar' ); ?></strong>
-                        <p><?php esc_html_e( 'Multiple themes and display options', '3task-calendar' ); ?></p>
+                        <p><?php esc_html_e( 'Five themes and several display options', '3task-calendar' ); ?></p>
                     </div>
                 </div>
             </div>
@@ -806,9 +1075,9 @@ class ThreeCal_Admin {
         global $wpdb;
 
         // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Dashboard stats, custom tables.
-        $total_events     = $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}threecal_events" );
-        $published_events = $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}threecal_events WHERE status = 'published'" );
-        $draft_events     = $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}threecal_events WHERE status = 'draft'" );
+        $total_events     = $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}threecal_events WHERE parent_id IS NULL OR parent_id = 0" );
+        $published_events = $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}threecal_events WHERE status = 'published' AND (parent_id IS NULL OR parent_id = 0)" );
+        $draft_events     = $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}threecal_events WHERE status = 'draft' AND (parent_id IS NULL OR parent_id = 0)" );
         $total_categories = $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}threecal_categories" );
         // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
@@ -823,11 +1092,39 @@ class ThreeCal_Admin {
     /**
      * Get events
      */
-    private function get_events() {
+    private function get_events( $scope = 'all' ) {
         global $wpdb;
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table for events.
-        $results = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}threecal_events ORDER BY start_date ASC" );
+        $now = current_time( 'mysql' );
+
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table for events.
+        if ( 'upcoming' === $scope ) {
+            $results = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT * FROM {$wpdb->prefix}threecal_events
+                    WHERE (parent_id IS NULL OR parent_id = 0)
+                    AND (COALESCE(end_date, start_date) >= %s OR (recurrence_rule IS NOT NULL AND recurrence_rule <> '' AND COALESCE(recurrence_end, start_date) >= %s))
+                    ORDER BY start_date ASC",
+                    $now,
+                    $now
+                )
+            );
+        } elseif ( 'past' === $scope ) {
+            $results = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT * FROM {$wpdb->prefix}threecal_events
+                    WHERE (parent_id IS NULL OR parent_id = 0)
+                    AND COALESCE(end_date, start_date) < %s
+                    AND (recurrence_rule IS NULL OR recurrence_rule = '' OR COALESCE(recurrence_end, start_date) < %s)
+                    ORDER BY start_date DESC",
+                    $now,
+                    $now
+                )
+            );
+        } else {
+            $results = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}threecal_events WHERE parent_id IS NULL OR parent_id = 0 ORDER BY start_date ASC" );
+        }
+        // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
         return $results ? $results : array();
     }
@@ -922,40 +1219,36 @@ class ThreeCal_Admin {
      * Sanitize settings
      */
     public function sanitize_settings($input) {
-        $sanitized = array();
+        $input  = is_array($input) ? $input : array();
+        $themes = ThreeCal_Themes::all();
+        $theme  = isset($input['default_theme']) ? sanitize_key($input['default_theme']) : 'default';
+        $view   = isset($input['default_view']) ? sanitize_key($input['default_view']) : 'month';
+        $accent = isset($input['accent_color']) ? sanitize_hex_color($input['accent_color']) : '';
 
-        // General
-        $sanitized['date_format'] = sanitize_text_field($input['date_format'] ?? get_option('date_format'));
-        $sanitized['time_format'] = sanitize_text_field($input['time_format'] ?? get_option('time_format'));
-        $sanitized['week_starts_on'] = absint($input['week_starts_on'] ?? 1);
-        $sanitized['default_view'] = sanitize_text_field($input['default_view'] ?? 'month');
-        $sanitized['default_theme'] = sanitize_text_field($input['default_theme'] ?? 'default');
+        // Every key the plugin reads. A key missing here is lost on the next save.
+        $sanitized = array(
+            'date_format'              => sanitize_text_field($input['date_format'] ?? get_option('date_format')),
+            'time_format'              => sanitize_text_field($input['time_format'] ?? get_option('time_format')),
+            'week_starts_on'           => (isset($input['week_starts_on']) && 0 === absint($input['week_starts_on'])) ? 0 : 1,
+            'default_view'             => in_array($view, array('month', 'list'), true) ? $view : 'month',
+            'default_theme'            => isset($themes[$theme]) ? $theme : 'default',
+            'accent_color'             => $accent ? $accent : '',
+            'show_event_time'          => isset($input['show_event_time']) ? !empty($input['show_event_time']) : true,
+            'show_event_location'      => isset($input['show_event_location']) ? !empty($input['show_event_location']) : true,
+            'show_event_description'   => isset($input['show_event_description']) ? !empty($input['show_event_description']) : true,
+            'events_per_page'          => max(1, absint($input['events_per_page'] ?? 10)),
+            'enable_event_popup'       => isset($input['enable_event_popup']) ? !empty($input['enable_event_popup']) : true,
+            'enable_schema'            => isset($input['enable_schema']) ? !empty($input['enable_schema']) : true,
+            'delete_data_on_uninstall' => !empty($input['delete_data_on_uninstall']),
+        );
 
-        // Display
-        $sanitized['show_event_time'] = !empty($input['show_event_time']);
-        $sanitized['show_event_location'] = !empty($input['show_event_location']);
-        $sanitized['show_event_description'] = !empty($input['show_event_description']);
-        $sanitized['events_per_page'] = absint($input['events_per_page'] ?? 10);
-        $sanitized['enable_event_popup'] = !empty($input['enable_event_popup']);
-
-        // Google Maps
-        $sanitized['google_maps_api_key'] = sanitize_text_field($input['google_maps_api_key'] ?? '');
-        $sanitized['default_map_zoom'] = absint($input['default_map_zoom'] ?? 14);
-        $sanitized['default_map_type'] = sanitize_text_field($input['default_map_type'] ?? 'roadmap');
-
-        // Email
-        $sanitized['enable_notifications'] = !empty($input['enable_notifications']);
-        $sanitized['notification_sender_name'] = sanitize_text_field($input['notification_sender_name'] ?? '');
-        $sanitized['notification_sender_email'] = sanitize_email($input['notification_sender_email'] ?? '');
-        $sanitized['notification_template'] = wp_kses_post($input['notification_template'] ?? '');
-
-        // SEO
-        $sanitized['enable_schema'] = !empty($input['enable_schema']);
-
-        // Advanced
-        $sanitized['delete_data_on_uninstall'] = !empty($input['delete_data_on_uninstall']);
-
-        return $sanitized;
+        /**
+         * Filters the sanitized settings, so extensions can keep their own keys.
+         *
+         * @param array $sanitized Sanitized settings.
+         * @param array $input     Raw settings.
+         */
+        return apply_filters('threecal_sanitize_settings', $sanitized, $input);
     }
 
     /**
@@ -973,6 +1266,19 @@ class ThreeCal_Admin {
             $id    = absint( $_GET['id'] );
             if ( wp_verify_nonce( $nonce, 'threecal_delete_' . $id ) ) {
                 $this->delete_event( $id );
+            }
+        }
+
+        // Cancel, restore or remove a single date of a series.
+        if ( isset( $_GET['threecal_date_action'], $_GET['series'], $_GET['date'], $_GET['_wpnonce'] ) ) {
+            $series_id = absint( $_GET['series'] );
+            $nonce     = sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) );
+            if ( wp_verify_nonce( $nonce, 'threecal_series_' . $series_id ) ) {
+                $this->series_date_action(
+                    $series_id,
+                    sanitize_key( wp_unslash( $_GET['threecal_date_action'] ) ),
+                    sanitize_text_field( wp_unslash( $_GET['date'] ) )
+                );
             }
         }
 
@@ -1026,6 +1332,10 @@ class ThreeCal_Admin {
             $event = new ThreeCal_Event();
         }
 
+        // Remember where a repetition came from, so its date can be excluded from the series.
+        $original_parent = (int) $event->parent_id;
+        $original_day    = substr( (string) $event->start_date, 0, 10 );
+
         $event->title          = isset( $_POST['event_title'] ) ? sanitize_text_field( wp_unslash( $_POST['event_title'] ) ) : '';
         $event->description    = isset( $_POST['event_description'] ) ? wp_kses_post( wp_unslash( $_POST['event_description'] ) ) : '';
         $event->start_date     = isset( $_POST['event_start_date'] ) ? sanitize_text_field( wp_unslash( $_POST['event_start_date'] ) ) : '';
@@ -1035,13 +1345,56 @@ class ThreeCal_Admin {
         $event->url            = isset( $_POST['event_url'] ) ? esc_url_raw( wp_unslash( $_POST['event_url'] ) ) : '';
         $event->featured_image = isset( $_POST['event_featured_image'] ) ? absint( $_POST['event_featured_image'] ) : 0;
         $event->color          = isset( $_POST['event_color'] ) ? ( sanitize_hex_color( wp_unslash( $_POST['event_color'] ) ) ?: '#3788d8' ) : '#3788d8';
-        $event->status         = isset( $_POST['event_status'] ) ? sanitize_text_field( wp_unslash( $_POST['event_status'] ) ) : 'publish';
+        $event->status         = isset( $_POST['event_status'] ) ? sanitize_key( wp_unslash( $_POST['event_status'] ) ) : 'published';
+
+        if ( ! in_array( $event->status, array( 'draft', 'published', 'cancelled' ), true ) ) {
+            $event->status = 'draft';
+        }
+
+        // Normalise dates (datetime-local sends Y-m-d\TH:i) and reject invalid input.
+        $event->start_date = $this->normalize_datetime( $event->start_date );
+        $event->end_date   = $event->end_date ? $this->normalize_datetime( $event->end_date ) : '';
+
+        if ( '' === $event->title || '' === $event->start_date ) {
+            wp_die( esc_html__( 'Please enter a title and a valid start date.', '3task-calendar' ), '', array( 'back_link' => true ) );
+        }
+
+        // An end before the start is treated as "no end".
+        if ( $event->end_date && $event->end_date < $event->start_date ) {
+            $event->end_date = '';
+        }
+
+        // Repeat pattern. Editing a single repetition detaches it from its series.
+        if ( $event->parent_id ) {
+            $event->parent_id       = 0;
+            $event->recurrence_rule = '';
+            $event->recurrence_end  = '';
+        } else {
+            $rule = isset( $_POST['event_recurrence'] ) ? sanitize_key( wp_unslash( $_POST['event_recurrence'] ) ) : '';
+            $event->recurrence_rule = array_key_exists( $rule, ThreeCal_Event::recurrence_options() ) ? $rule : '';
+            $until = isset( $_POST['event_recurrence_end'] ) ? $this->normalize_datetime( sanitize_text_field( wp_unslash( $_POST['event_recurrence_end'] ) ) ) : '';
+            $event->recurrence_end = ( $event->recurrence_rule && $until ) ? substr( $until, 0, 10 ) . ' 23:59:59' : '';
+        }
 
         if ( $event->save() ) {
             // Set categories.
             $categories = isset( $_POST['event_categories'] ) ? array_map( 'absint', $_POST['event_categories'] ) : array();
             $event->set_categories( $categories );
             // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+            // Create or update the repetitions of a series.
+            $event->regenerate_series();
+
+            // A detached repetition becomes an exception of its series.
+            if ( $original_parent && $original_day ) {
+                $parent = ThreeCal_Event::get( $original_parent );
+                if ( $parent ) {
+                    $exdates   = (array) $parent->get_setting( 'exdates', array() );
+                    $exdates[] = $original_day;
+                    $parent->set_setting( 'exdates', array_values( array_unique( $exdates ) ) );
+                    $parent->save();
+                }
+            }
 
             // Redirect
             $redirect = add_query_arg(array(
@@ -1060,6 +1413,23 @@ class ThreeCal_Admin {
     }
 
     /**
+     * Convert a submitted date to Y-m-d H:i:s or return an empty string.
+     *
+     * @param string $value Submitted value.
+     * @return string
+     */
+    private function normalize_datetime( $value ) {
+        $value = trim( str_replace( 'T', ' ', (string) $value ) );
+        foreach ( array( 'Y-m-d H:i:s', 'Y-m-d H:i', 'Y-m-d' ) as $format ) {
+            $date = DateTime::createFromFormat( '!' . $format, $value );
+            if ( $date && $date->format( $format ) === $value ) {
+                return $date->format( 'Y-m-d H:i:s' );
+            }
+        }
+        return '';
+    }
+
+    /**
      * Delete event
      */
     private function delete_event($id) {
@@ -1071,10 +1441,78 @@ class ThreeCal_Admin {
         if ($event && $event->delete()) {
             wp_safe_redirect( add_query_arg( array(
                 'page' => '3task-calendar',
+                'tab' => 'events',
                 'message' => 'deleted'
             ), admin_url('admin.php')));
             exit;
         }
+    }
+
+    /**
+     * Cancel, restore or remove a single date of a series.
+     *
+     * @param int    $series_id ID of the series (its first event).
+     * @param string $action    cancel, restore or remove.
+     * @param string $day       Date (Y-m-d).
+     */
+    private function series_date_action( $series_id, $action, $day ) {
+        if ( ! current_user_can( 'edit_threecal_events' ) ) {
+            wp_die( esc_html__( 'Permission denied.', '3task-calendar' ) );
+        }
+
+        $series = ThreeCal_Event::get( $series_id );
+        if ( ! $series || $series->parent_id || ! $series->recurrence_rule || ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $day ) || ! in_array( $action, array( 'cancel', 'restore', 'remove' ), true ) ) {
+            wp_die( esc_html__( 'This date could not be changed.', '3task-calendar' ), '', array( 'back_link' => true ) );
+        }
+
+        $target = $series->id;
+        $split  = null;
+        foreach ( $series->get_split_events() as $candidate ) {
+            if ( substr( (string) $candidate->start_date, 0, 10 ) === $day ) {
+                $split = $candidate;
+                break;
+            }
+        }
+
+        if ( $split ) {
+            // A former first date that is a separate event now.
+            if ( 'remove' === $action ) {
+                $split->delete();
+                $ids = array_diff( array_map( 'absint', (array) $series->get_setting( 'split_dates', array() ) ), array( (int) $split->id ) );
+                $series->set_setting( 'split_dates', array_values( $ids ) );
+                $series->save();
+            } else {
+                $split->status = ( 'cancel' === $action && 'published' === $series->status ) ? 'cancelled' : $series->status;
+                $split->save();
+            }
+        } elseif ( substr( (string) $series->start_date, 0, 10 ) === $day ) {
+            // The first date is the series itself: the next date takes the series over.
+            $next = $series->split_off_first_date();
+            if ( 'remove' === $action ) {
+                $series->delete();
+            } elseif ( 'cancel' === $action ) {
+                $series->status = 'cancelled';
+                $series->save();
+            }
+            $target = $next ? $next : ( 'remove' === $action ? 0 : $series->id );
+        } elseif ( 'remove' === $action ) {
+            $series->remove_date( $day );
+        } else {
+            $series->set_date_cancelled( $day, 'cancel' === $action );
+        }
+
+        $args = array(
+            'page'    => '3task-calendar',
+            'tab'     => 'events',
+            'message' => 'date_' . $action,
+        );
+        if ( $target ) {
+            $args['action'] = 'edit';
+            $args['event']  = $target;
+        }
+
+        wp_safe_redirect( add_query_arg( $args, admin_url( 'admin.php' ) ) );
+        exit;
     }
 
     /**
@@ -1109,14 +1547,8 @@ class ThreeCal_Admin {
         $location->description    = isset( $_POST['location_description'] ) ? wp_kses_post( wp_unslash( $_POST['location_description'] ) ) : '';
         $location->featured_image = isset( $_POST['location_featured_image'] ) ? absint( $_POST['location_featured_image'] ) : 0;
 
-        // Geocode if API key is set.
-        $do_geocode = isset( $_POST['location_geocode'] ) ? sanitize_text_field( wp_unslash( $_POST['location_geocode'] ) ) : '';
-        if ( $do_geocode ) {
-            $location->geocode();
-        } else {
-            $location->latitude  = isset( $_POST['location_latitude'] ) ? floatval( $_POST['location_latitude'] ) : null;
-            $location->longitude = isset( $_POST['location_longitude'] ) ? floatval( $_POST['location_longitude'] ) : null;
-        }
+        $location->latitude  = ( isset( $_POST['location_latitude'] ) && '' !== trim( sanitize_text_field( wp_unslash( $_POST['location_latitude'] ) ) ) ) ? floatval( $_POST['location_latitude'] ) : null;
+        $location->longitude = ( isset( $_POST['location_longitude'] ) && '' !== trim( sanitize_text_field( wp_unslash( $_POST['location_longitude'] ) ) ) ) ? floatval( $_POST['location_longitude'] ) : null;
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
         if ( $location->save() ) {
@@ -1178,6 +1610,8 @@ class ThreeCal_Admin {
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
         if ( $category->save() ) {
+            // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in handle_form_submissions.
+            ThreeCal_Category::set_schema_excluded( $category->id, ! empty( $_POST['category_no_schema'] ) );
             wp_safe_redirect( add_query_arg( array(
                 'page'    => '3task-calendar',
                 'tab'     => 'categories',
@@ -1197,6 +1631,7 @@ class ThreeCal_Admin {
 
         $category = ThreeCal_Category::get($id);
         if ($category && $category->delete()) {
+            ThreeCal_Category::set_schema_excluded($id, false);
             wp_safe_redirect( add_query_arg( array(
                 'page' => '3task-calendar',
                 'tab' => 'categories',
@@ -1204,13 +1639,6 @@ class ThreeCal_Admin {
             ), admin_url('admin.php')));
             exit;
         }
-    }
-
-    /**
-     * Render events page
-     */
-    public function render_events_page() {
-        include THREECAL_PLUGIN_DIR . 'admin/views/events-list.php';
     }
 
     /**
@@ -1227,31 +1655,4 @@ class ThreeCal_Admin {
         include THREECAL_PLUGIN_DIR . 'admin/views/event-edit.php';
     }
 
-    /**
-     * Render edit event page
-     */
-    public function render_edit_event_page() {
-        include THREECAL_PLUGIN_DIR . 'admin/views/event-edit.php';
-    }
-
-    /**
-     * Render locations page
-     */
-    public function render_locations_page() {
-        include THREECAL_PLUGIN_DIR . 'admin/views/locations.php';
-    }
-
-    /**
-     * Render categories page
-     */
-    public function render_categories_page() {
-        include THREECAL_PLUGIN_DIR . 'admin/views/categories.php';
-    }
-
-    /**
-     * Render settings page
-     */
-    public function render_settings_page() {
-        include THREECAL_PLUGIN_DIR . 'admin/views/settings.php';
-    }
 }

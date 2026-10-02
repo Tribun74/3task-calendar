@@ -30,6 +30,13 @@ class ThreeCal_Category {
 	public $created_at;
 
 	/**
+	 * Depth in the hierarchy (set by get_hierarchical()).
+	 *
+	 * @var int
+	 */
+	public $level = 0;
+
+	/**
 	 * Table name
 	 */
 	private static function table() {
@@ -223,7 +230,7 @@ class ThreeCal_Category {
 			'description' => $this->description,
 			'color'       => $this->color,
 			'parent_id'   => $this->parent_id ? $this->parent_id : null,
-			'sort_order'  => $this->sort_order,
+			'sort_order'  => (int) $this->sort_order,
 		);
 
 		$format = array( '%s', '%s', '%s', '%s', '%d', '%d' );
@@ -383,5 +390,31 @@ class ThreeCal_Category {
 	 */
 	public function get_children() {
 		return self::get_all( array( 'parent_id' => $this->id ) );
+	}
+
+	/**
+	 * IDs of categories whose events are not marked up as events for search engines.
+	 *
+	 * Google does not allow business hours, office hours or other non-events
+	 * as Event markup, so such categories can be excluded.
+	 *
+	 * @return int[]
+	 */
+	public static function no_schema_ids() {
+		return array_map( 'absint', (array) get_option( 'threecal_no_schema_categories', array() ) );
+	}
+
+	/**
+	 * Include or exclude a category from the event markup.
+	 *
+	 * @param int  $id       Category ID.
+	 * @param bool $excluded True to leave its events out of the markup.
+	 */
+	public static function set_schema_excluded( $id, $excluded ) {
+		$ids = array_diff( self::no_schema_ids(), array( absint( $id ) ) );
+		if ( $excluded ) {
+			$ids[] = absint( $id );
+		}
+		update_option( 'threecal_no_schema_categories', array_values( array_unique( $ids ) ), false );
 	}
 }

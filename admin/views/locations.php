@@ -23,8 +23,6 @@ $locations = ThreeCal_Location::get_all();
 $countries = ThreeCal_Location::get_countries();
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- View file, message param is for display only.
 $message = isset( $_GET['message'] ) ? sanitize_text_field( wp_unslash( $_GET['message'] ) ) : '';
-$settings = get_option('threecal_settings', array());
-$has_maps_key = !empty($settings['google_maps_api_key']);
 ?>
 
 <div class="wrap threecal-admin threecal-locations-page">
@@ -99,15 +97,6 @@ $has_maps_key = !empty($settings['google_maps_api_key']);
                                    value="<?php echo esc_attr($editing && $editing->longitude ? $editing->longitude : ''); ?>">
                         </div>
                     </div>
-
-                    <?php if ($has_maps_key) : ?>
-                    <div class="threecal-field">
-                        <label>
-                            <input type="checkbox" name="location_geocode" value="1">
-                            <?php esc_html_e('Auto-detect coordinates from address', '3task-calendar'); ?>
-                        </label>
-                    </div>
-                    <?php endif; ?>
 
                     <div class="threecal-field-row">
                         <div class="threecal-field threecal-field-half">

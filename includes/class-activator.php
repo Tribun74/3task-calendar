@@ -35,7 +35,7 @@ class ThreeCal_Activator {
 	/**
 	 * Create database tables
 	 */
-	private static function create_tables() {
+	public static function create_tables() {
 		global $wpdb;
 
 		$charset_collate = $wpdb->get_charset_collate();
@@ -116,29 +116,11 @@ class ThreeCal_Activator {
 			KEY idx_category (category_id)
 		) $charset_collate;";
 
-		// Subscribers table (for event notifications).
-		$table_subscribers = $wpdb->prefix . 'threecal_subscribers';
-		$sql_subscribers   = "CREATE TABLE $table_subscribers (
-			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-			email varchar(100) NOT NULL,
-			name varchar(100) DEFAULT NULL,
-			event_id bigint(20) unsigned DEFAULT NULL,
-			category_id bigint(20) unsigned DEFAULT NULL,
-			status varchar(20) NOT NULL DEFAULT 'active',
-			token varchar(64) NOT NULL,
-			created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			PRIMARY KEY (id),
-			UNIQUE KEY idx_email_event (email, event_id),
-			KEY idx_token (token),
-			KEY idx_status (status)
-		) $charset_collate;";
-
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		dbDelta( $sql_events );
 		dbDelta( $sql_locations );
 		dbDelta( $sql_categories );
 		dbDelta( $sql_event_categories );
-		dbDelta( $sql_subscribers );
 
 		// Store database version.
 		update_option( 'threecal_db_version', THREECAL_DB_VERSION );
@@ -164,17 +146,6 @@ class ThreeCal_Activator {
 				'events_per_page'        => 10,
 				'enable_event_popup'     => true,
 
-				// Google Maps.
-				'google_maps_api_key' => '',
-				'default_map_zoom'    => 14,
-				'default_map_type'    => 'roadmap',
-
-				// Email.
-				'enable_notifications'        => true,
-				'notification_sender_name'    => get_bloginfo( 'name' ),
-				'notification_sender_email'   => get_option( 'admin_email' ),
-				'notification_template'       => "Hallo {subscriber_name},\n\nErinnerung: {event_title} findet am {event_date} statt.\n\nOrt: {event_location}\n\nMit freundlichen Grüßen,\n{site_name}",
-
 				// SEO.
 				'enable_schema' => true,
 
@@ -193,7 +164,7 @@ class ThreeCal_Activator {
 	/**
 	 * Add capabilities
 	 */
-	private static function add_capabilities() {
+	public static function add_capabilities() {
 		$admin  = get_role( 'administrator' );
 		$editor = get_role( 'editor' );
 

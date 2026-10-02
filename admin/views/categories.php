@@ -92,6 +92,14 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( wp_unslash( $_GET['m
                         <textarea id="category_description" name="category_description" rows="3"><?php echo esc_textarea($editing ? $editing->description : ''); ?></textarea>
                     </div>
 
+                    <div class="threecal-field">
+                        <label class="threecal-checkbox-label">
+                            <input type="checkbox" name="category_no_schema" value="1" <?php checked( $editing && in_array( (int) $editing->id, ThreeCal_Category::no_schema_ids(), true ) ); ?>>
+                            <?php esc_html_e( 'Not an event for search engines', '3task-calendar' ); ?>
+                        </label>
+                        <p class="description"><?php esc_html_e( 'For office hours, holidays or release dates. Google does not allow these as event markup. The dates still appear in the calendar.', '3task-calendar' ); ?></p>
+                    </div>
+
                     <div class="threecal-submit-row">
                         <button type="submit" name="threecal_save_category" class="button button-primary">
                             <?php echo $editing ? esc_html__('Update Category', '3task-calendar') : esc_html__('Add Category', '3task-calendar'); ?>

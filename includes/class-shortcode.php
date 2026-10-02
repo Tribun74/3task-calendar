@@ -41,9 +41,11 @@ class ThreeCal_Shortcode {
 				'view'           => 'month',
 				'category'       => 0,
 				'location'       => 0,
-				'theme'          => 'default',
+				'theme'          => '',
 				'show_filters'   => 'true',
 				'show_legend'    => 'true',
+				'show_subscribe' => 'true',
+				'mobile_list'    => 'true',
 				'week_starts_on' => '',
 			),
 			$atts,
@@ -64,6 +66,8 @@ class ThreeCal_Shortcode {
 				'theme'          => sanitize_text_field( $atts['theme'] ),
 				'show_filters'   => $atts['show_filters'] === 'true',
 				'show_legend'    => $atts['show_legend'] === 'true',
+				'show_subscribe' => $atts['show_subscribe'] === 'true',
+				'mobile_list'    => $atts['mobile_list'] === 'true',
 				'week_starts_on' => $atts['week_starts_on'] !== '' ? absint( $atts['week_starts_on'] ) : null,
 			)
 		);
@@ -80,7 +84,7 @@ class ThreeCal_Shortcode {
 		$atts = shortcode_atts(
 			array(
 				'id'               => 0,
-				'theme'            => 'default',
+				'theme'            => '',
 				'show_map'         => 'true',
 				'show_description' => 'true',
 			),
@@ -96,7 +100,7 @@ class ThreeCal_Shortcode {
 
 		$event = ThreeCal_Event::get( $event_id );
 
-		if ( ! $event || $event->status !== 'published' ) {
+		if ( ! $event || ! $event->is_visible() ) {
 			return '';
 		}
 
@@ -129,7 +133,7 @@ class ThreeCal_Shortcode {
 				'location'        => 0,
 				'limit'           => 10,
 				'view'            => 'list',
-				'theme'           => 'default',
+				'theme'           => '',
 				'show_past'       => 'false',
 				'show_pagination' => 'true',
 				'columns'         => 3,
@@ -141,11 +145,16 @@ class ThreeCal_Shortcode {
 		// Enqueue styles.
 		wp_enqueue_style( 'threecal-public' );
 
+		// Every list on a page pages on its own (tc_page, tc_page2, ...).
+		static $instance = 0;
+		$instance++;
+		$page_param = 1 === $instance ? 'tc_page' : 'tc_page' . $instance;
+
 		$args = array(
-			'status'   => 'published',
+			'status'   => ThreeCal_Event::visible_statuses(),
 			'per_page' => absint( $atts['limit'] ),
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Pagination param, sanitized with absint().
-			'page'     => isset( $_GET['tc_page'] ) ? absint( $_GET['tc_page'] ) : 1,
+			'page'     => isset( $_GET[ $page_param ] ) ? max( 1, absint( $_GET[ $page_param ] ) ) : 1,
 			'orderby'  => 'start_date',
 			'order'    => 'ASC',
 		);
@@ -159,7 +168,8 @@ class ThreeCal_Shortcode {
 		}
 
 		if ( $atts['show_past'] !== 'true' ) {
-			$args['start_after'] = current_time( 'mysql' );
+			// Running events (started, not yet ended) stay in the list.
+			$args['ends_after'] = current_time( 'mysql' );
 		}
 
 		$events = ThreeCal_Event::get_all( $args );
@@ -177,6 +187,7 @@ class ThreeCal_Shortcode {
 				'total'           => $total,
 				'per_page'        => absint( $atts['limit'] ),
 				'current_page'    => $args['page'],
+				'page_param'      => $page_param,
 			)
 		);
 	}
@@ -193,7 +204,7 @@ class ThreeCal_Shortcode {
 			array(
 				'limit'         => 5,
 				'category'      => 0,
-				'theme'         => 'default',
+				'theme'         => '',
 				'show_date'     => 'true',
 				'show_time'     => 'true',
 				'show_location' => 'true',
@@ -234,7 +245,7 @@ class ThreeCal_Shortcode {
 		$atts = shortcode_atts(
 			array(
 				'category'       => 0,
-				'theme'          => 'default',
+				'theme'          => '',
 				'show_nav'       => 'true',
 				'show_today'     => 'true',
 				'week_starts_on' => '',
