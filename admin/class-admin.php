@@ -464,7 +464,13 @@ class ThreeCal_Admin {
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display filter only.
         $scope  = isset( $_GET['scope'] ) ? sanitize_key( wp_unslash( $_GET['scope'] ) ) : 'upcoming';
         $scope  = in_array( $scope, array( 'upcoming', 'past', 'all' ), true ) ? $scope : 'upcoming';
-        $events = $this->get_events( $scope );
+        /**
+         * Filters the events shown in the admin list.
+         *
+         * @param array  $events Event rows.
+         * @param string $scope  upcoming, past or all.
+         */
+        $events = apply_filters( 'threecal_admin_events', $this->get_events( $scope ), $scope );
 
         // Dates that come from posts are kept in the posts, not in this list.
         $from_posts = 0;
@@ -1367,6 +1373,19 @@ class ThreeCal_Admin {
             wp_die( esc_html__( 'Please enter a title and a valid start date.', '3task-calendar' ), '', array( 'back_link' => true ) );
         }
 
+        $categories = isset( $_POST['event_categories'] ) ? array_map( 'absint', (array) $_POST['event_categories'] ) : array();
+
+        /**
+         * Filters whether the current user may save this event.
+         *
+         * @param bool           $allowed    Whether saving is allowed.
+         * @param ThreeCal_Event $event      The event with the submitted values (ID 0 for a new one).
+         * @param int[]          $categories Submitted category IDs.
+         */
+        if ( ! apply_filters( 'threecal_user_can_save_event', true, $event, $categories ) ) {
+            wp_die( esc_html__( 'Permission denied.', '3task-calendar' ), '', array( 'back_link' => true ) );
+        }
+
         // An end before the start is treated as "no end".
         if ( $event->end_date && $event->end_date < $event->start_date ) {
             $event->end_date = '';
@@ -1386,12 +1405,19 @@ class ThreeCal_Admin {
 
         if ( $event->save() ) {
             // Set categories.
-            $categories = isset( $_POST['event_categories'] ) ? array_map( 'absint', $_POST['event_categories'] ) : array();
             $event->set_categories( $categories );
             // phpcs:enable WordPress.Security.NonceVerification.Missing
 
             // Create or update the repetitions of a series.
             $event->regenerate_series();
+
+            /**
+             * Fires after an event has been saved from the admin form.
+             *
+             * @param ThreeCal_Event $event      The saved event.
+             * @param int[]          $categories Category IDs.
+             */
+            do_action( 'threecal_admin_event_saved', $event, $categories );
 
             // A detached repetition becomes an exception of its series.
             if ( $original_parent && $original_day ) {
@@ -1446,6 +1472,17 @@ class ThreeCal_Admin {
         }
 
         $event = ThreeCal_Event::get($id);
+
+        /**
+         * Filters whether the current user may delete this event.
+         *
+         * @param bool           $allowed Whether deleting is allowed.
+         * @param ThreeCal_Event $event   The event.
+         */
+        if ( $event && ! apply_filters( 'threecal_user_can_delete_event', true, $event ) ) {
+            wp_die( esc_html__( 'Permission denied.', '3task-calendar' ), '', array( 'back_link' => true ) );
+        }
+
         if ($event && $event->delete()) {
             wp_safe_redirect( add_query_arg( array(
                 'page' => '3task-calendar',
@@ -1471,6 +1508,11 @@ class ThreeCal_Admin {
         $series = ThreeCal_Event::get( $series_id );
         if ( ! $series || $series->parent_id || ! $series->recurrence_rule || ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $day ) || ! in_array( $action, array( 'cancel', 'restore', 'remove' ), true ) ) {
             wp_die( esc_html__( 'This date could not be changed.', '3task-calendar' ), '', array( 'back_link' => true ) );
+        }
+
+        /** This filter is documented in admin/class-admin.php */
+        if ( ! apply_filters( 'threecal_user_can_save_event', true, $series, wp_list_pluck( ThreeCal_Event::get_categories( $series->id ), 'id' ) ) ) {
+            wp_die( esc_html__( 'Permission denied.', '3task-calendar' ), '', array( 'back_link' => true ) );
         }
 
         $target = $series->id;

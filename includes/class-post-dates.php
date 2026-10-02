@@ -1035,7 +1035,15 @@ class ThreeCal_Post_Dates {
 			<?php endif; ?>
 		</div>
 		<?php
-		return ob_get_clean();
+		/**
+		 * Filters the date box of a post.
+		 *
+		 * @param string         $html    Rendered box.
+		 * @param int            $post_id Post ID.
+		 * @param ThreeCal_Event $event   The event of the post.
+		 * @param string         $theme   Design key.
+		 */
+		return apply_filters( 'threecal_post_date_box', ob_get_clean(), $post_id, $event, $theme );
 	}
 
 	/* ---------------------------------------------------------------------

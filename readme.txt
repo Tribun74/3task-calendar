@@ -4,7 +4,7 @@ Tags: event calendar, recurring events, ical, gdpr, events
 Requires at least: 5.8
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.5.0
+Stable tag: 1.5.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -166,6 +166,11 @@ Please use the [WordPress.org support forum](https://wordpress.org/support/plugi
 
 == Changelog ==
 
+= 1.5.1 =
+* NEW: Hooks for add-ons: threecal_user_can_save_event, threecal_user_can_delete_event, threecal_admin_events, threecal_admin_category_choices, threecal_event_edit_meta_boxes, threecal_event_saved, threecal_event_deleted, threecal_event_data, threecal_event_details
+* NEW: Event queries accept several categories at once (category_ids)
+* FIXED: The "Add Category" link in the event form is only shown to users who may manage categories
+
 = 1.5.0 =
 * NEW: A whole month in a list: [threecal_events month="current"], month="next" or month="2026-10", for pages such as "Cinema releases in October"
 * NEW: "Now showing": [threecal_events running="40"] lists the dates that started within the last 40 days, newest first
@@ -260,6 +265,9 @@ Please use the [WordPress.org support forum](https://wordpress.org/support/plugi
 * German translation included
 
 == Upgrade Notice ==
+
+= 1.5.1 =
+Hooks for add-ons such as 3task Calendar Pro. No change for existing calendars.
 
 = 1.5.0 =
 Lists for a whole month and for dates that are running now. Date and time format follow the WordPress settings by default.

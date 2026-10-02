@@ -160,6 +160,14 @@ class ThreeCal_Event {
 			$values[] = $args['category_id'];
 		}
 
+		if ( ! empty( $args['category_ids'] ) ) {
+			$ids = array_values( array_filter( array_map( 'absint', (array) $args['category_ids'] ) ) );
+			if ( ! empty( $ids ) ) {
+				$where[] = 'e.id IN (SELECT event_id FROM ' . $wpdb->prefix . 'threecal_event_categories WHERE category_id IN (' . implode( ',', array_fill( 0, count( $ids ), '%d' ) ) . '))';
+				$values  = array_merge( $values, $ids );
+			}
+		}
+
 		if ( ! empty( $args['location_id'] ) ) {
 			$where[]  = 'e.location_id = %d';
 			$values[] = $args['location_id'];
@@ -209,6 +217,7 @@ class ThreeCal_Event {
 		return array(
 			'status'       => '',
 			'category_id'  => 0,
+			'category_ids' => array(),
 			'location_id'  => 0,
 			'start_after'  => '',
 			'start_before' => '',
@@ -420,6 +429,16 @@ class ThreeCal_Event {
 				array( '%d' )
 			);
 
+			if ( false !== $result ) {
+				/**
+				 * Fires after an event has been saved.
+				 *
+				 * @param ThreeCal_Event $event  The event.
+				 * @param bool           $is_new True when the event was just created.
+				 */
+				do_action( 'threecal_event_saved', $this, false );
+			}
+
 			return $result !== false;
 		} else {
 			// Insert.
@@ -431,6 +450,8 @@ class ThreeCal_Event {
 
 			if ( $result ) {
 				$this->id = $wpdb->insert_id;
+				/** This action is documented in includes/class-event.php */
+				do_action( 'threecal_event_saved', $this, true );
 				return true;
 			}
 
@@ -472,11 +493,23 @@ class ThreeCal_Event {
 
 		// Delete event.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table for events.
-		return $wpdb->delete(
+		$deleted = $wpdb->delete(
 			self::table(),
 			array( 'id' => $this->id ),
 			array( '%d' )
 		) !== false;
+
+		if ( $deleted ) {
+			/**
+			 * Fires after an event and its repetitions have been deleted.
+			 *
+			 * @param int            $event_id ID of the deleted event.
+			 * @param ThreeCal_Event $event    The deleted event (data still available).
+			 */
+			do_action( 'threecal_event_deleted', (int) $this->id, $this );
+		}
+
+		return $deleted;
 	}
 
 	/**

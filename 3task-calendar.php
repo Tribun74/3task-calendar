@@ -3,7 +3,7 @@
  * Plugin Name:       3task Calendar
  * Plugin URI:        https://www.3task.de/3task-calendar-pro/
  * Description:       Event calendar without external services: recurring events, iCal subscription, categories, locations and event schema. Month and list views, German translation included.
- * Version:           1.5.0
+ * Version:           1.5.1
  * Author:            3task
  * Author URI:        https://www.3task.de
  * License:           GPL-2.0+
@@ -23,7 +23,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin constants
-define('THREECAL_VERSION', '1.5.0');
+define('THREECAL_VERSION', '1.5.1');
 define('THREECAL_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('THREECAL_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('THREECAL_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -698,7 +698,7 @@ final class ThreeCal {
             );
         }
 
-        return array(
+        $data = array(
             'id' => $event->id,
             'title' => $event->title,
             'description' => $event->description,
@@ -712,6 +712,14 @@ final class ThreeCal {
             'url' => $event->url,
             'featured_image' => $event->featured_image ? wp_get_attachment_url($event->featured_image) : null
         );
+
+        /**
+         * Filters the data of one event as sent to the calendar views.
+         *
+         * @param array          $data  Event data.
+         * @param ThreeCal_Event $event The event.
+         */
+        return apply_filters( 'threecal_event_data', $data, $event );
     }
 
     /**
@@ -847,6 +855,14 @@ final class ThreeCal {
             'postponed' => ThreeCal_Post_Dates::postponed_text($event),
             'featured_image' => $event->featured_image ? wp_get_attachment_url($event->featured_image) : null
         );
+
+        /**
+         * Filters the data of one event as shown in the details popup.
+         *
+         * @param array          $data  Event details.
+         * @param ThreeCal_Event $event The event.
+         */
+        $data = apply_filters( 'threecal_event_details', $data, $event );
 
         wp_send_json_success($data);
     }

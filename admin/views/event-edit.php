@@ -42,9 +42,21 @@ $page_title = $is_new ? __('Add New Event', '3task-calendar') : __('Edit Event',
 
 // Get data for dropdowns
 $locations = ThreeCal_Location::get_all();
-$categories = ThreeCal_Category::get_hierarchical();
 $event_categories = $event ? ThreeCal_Event::get_categories($event_id) : array();
 $event_category_ids = array_map(function($c) { return $c->id; }, $event_categories);
+
+/** This filter is documented in admin/class-admin.php */
+if ( $event && ! apply_filters( 'threecal_user_can_save_event', true, $event, $event_category_ids ) ) {
+    wp_die( esc_html__( 'Permission denied.', '3task-calendar' ), '', array( 'back_link' => true ) );
+}
+
+/**
+ * Filters the categories offered in the event form.
+ *
+ * @param array               $categories Hierarchical category list.
+ * @param ThreeCal_Event|null $event      The event being edited, null for a new one.
+ */
+$categories = apply_filters( 'threecal_admin_category_choices', ThreeCal_Category::get_hierarchical(), $event );
 
 // Default values.
 $defaults = array(
@@ -249,11 +261,22 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( wp_unslash( $_GET['m
                         <?php else : ?>
                         <p class="description"><?php esc_html_e('No categories yet.', '3task-calendar'); ?></p>
                         <?php endif; ?>
+                        <?php if ( current_user_can( 'manage_threecal_categories' ) ) : ?>
                         <a href="<?php echo esc_url(admin_url('admin.php?page=3task-calendar&tab=categories')); ?>" class="threecal-add-new">
                             + <?php esc_html_e('Add Category', '3task-calendar'); ?>
                         </a>
+                        <?php endif; ?>
                     </div>
                 </div>
+
+                <?php
+                /**
+                 * Fires after the categories box in the event form.
+                 *
+                 * @param ThreeCal_Event|null $event The event being edited, null for a new one.
+                 */
+                do_action( 'threecal_event_edit_meta_boxes', $event );
+                ?>
 
                 <!-- Color -->
                 <div class="threecal-meta-box">
