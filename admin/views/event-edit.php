@@ -295,8 +295,8 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( wp_unslash( $_GET['m
         $threecal_split   = $event->get_split_events();
         $threecal_dates   = array_merge( $threecal_split, array( $event ), $event->get_series_events() );
         $threecal_split_ids = array_map( 'intval', wp_list_pluck( $threecal_split, 'id' ) );
-        $threecal_dformat = get_option( 'date_format' );
-        $threecal_tformat = get_option( 'time_format' );
+        $threecal_dformat = threecal_date_format();
+        $threecal_tformat = threecal_time_format();
         $threecal_today   = current_time( 'Y-m-d' );
         $threecal_live    = 'published' === $event->status;
         $threecal_base    = admin_url( 'admin.php?page=3task-calendar&tab=events&series=' . $event->id );

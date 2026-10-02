@@ -3,7 +3,7 @@
  * Plugin Name:       3task Calendar
  * Plugin URI:        https://www.3task.de/3task-calendar-pro/
  * Description:       Event calendar without external services: recurring events, iCal subscription, categories, locations and event schema. Month and list views, German translation included.
- * Version:           1.4.0
+ * Version:           1.5.0
  * Author:            3task
  * Author URI:        https://www.3task.de
  * License:           GPL-2.0+
@@ -23,11 +23,31 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin constants
-define('THREECAL_VERSION', '1.4.0');
+define('THREECAL_VERSION', '1.5.0');
 define('THREECAL_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('THREECAL_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('THREECAL_PLUGIN_BASENAME', plugin_basename(__FILE__));
-define('THREECAL_DB_VERSION', '1.0.1');
+define('THREECAL_DB_VERSION', '1.0.2');
+
+/**
+ * Date format for events: the plugin setting, or the WordPress setting when it is empty.
+ *
+ * @return string
+ */
+function threecal_date_format() {
+    $settings = (array) get_option('threecal_settings', array());
+    return ! empty($settings['date_format']) ? (string) $settings['date_format'] : (string) get_option('date_format', 'F j, Y');
+}
+
+/**
+ * Time format for events: the plugin setting, or the WordPress setting when it is empty.
+ *
+ * @return string
+ */
+function threecal_time_format() {
+    $settings = (array) get_option('threecal_settings', array());
+    return ! empty($settings['time_format']) ? (string) $settings['time_format'] : (string) get_option('time_format', 'H:i');
+}
 
 /**
  * Version string for a plugin asset.
@@ -736,7 +756,7 @@ final class ThreeCal {
         $data = array();
 
         $settings    = get_option( 'threecal_settings', array() );
-        $time_format = ! empty( $settings['time_format'] ) ? $settings['time_format'] : get_option( 'time_format', 'H:i' );
+        $time_format = threecal_time_format();
 
         foreach ($events as $event) {
             $event_data = $this->format_event_for_api($event, isset($categories[$event->id]) ? $categories[$event->id] : array());
@@ -804,8 +824,8 @@ final class ThreeCal {
 
         // Format dates
         $settings    = get_option('threecal_settings', array());
-        $date_format = !empty($settings['date_format']) ? $settings['date_format'] : get_option('date_format');
-        $time_format = !empty($settings['time_format']) ? $settings['time_format'] : get_option('time_format');
+        $date_format = threecal_date_format();
+        $time_format = threecal_time_format();
 
         $same_day = !$event->end_date || substr($event->start_date, 0, 10) === substr($event->end_date, 0, 10);
 
@@ -849,6 +869,23 @@ final class ThreeCal {
             return;
         }
         ThreeCal_Activator::create_tables();
+
+        // Up to 1.4.0 the activation copied the WordPress date and time format into the plugin
+        // settings. An unchanged copy now follows the WordPress setting again.
+        $settings = get_option('threecal_settings');
+        if (is_array($settings)) {
+            $changed = false;
+            foreach (array('date_format', 'time_format') as $key) {
+                if (isset($settings[$key]) && '' !== $settings[$key] && $settings[$key] === get_option($key)) {
+                    $settings[$key] = '';
+                    $changed        = true;
+                }
+            }
+            if ($changed) {
+                update_option('threecal_settings', $settings);
+            }
+        }
+
         update_option('threecal_db_version', THREECAL_DB_VERSION);
     }
 

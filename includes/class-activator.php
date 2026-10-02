@@ -133,8 +133,8 @@ class ThreeCal_Activator {
 		$defaults = array(
 			'threecal_settings' => array(
 				// General.
-				'date_format'    => get_option( 'date_format' ),
-				'time_format'    => get_option( 'time_format' ),
+				'date_format'    => '',
+				'time_format'    => '',
 				'week_starts_on' => get_option( 'start_of_week', 1 ),
 				'default_view'   => 'month',
 				'default_theme'  => 'default',

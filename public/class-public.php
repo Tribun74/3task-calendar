@@ -73,8 +73,8 @@ class ThreeCal_Public {
             'icons' => ThreeCal_Icons::for_js(),
             'rest_url' => rest_url('3task-calendar/v1/'),
             'settings' => array(
-                'date_format' => $this->settings['date_format'] ?? get_option('date_format'),
-                'time_format' => $this->settings['time_format'] ?? get_option('time_format'),
+                'date_format' => threecal_date_format(),
+                'time_format' => threecal_time_format(),
                 'week_starts_on' => $this->settings['week_starts_on'] ?? 1,
                 'enable_popup' => $this->settings['enable_event_popup'] ?? true
             ),

@@ -137,6 +137,8 @@ class ThreeCal_Shortcode {
 				'show_past'       => 'false',
 				'show_pagination' => 'true',
 				'columns'         => 3,
+				'month'           => '',
+				'running'         => 0,
 			),
 			$atts,
 			'threecal_events'
@@ -167,7 +169,20 @@ class ThreeCal_Shortcode {
 			$args['location_id'] = absint( $atts['location'] );
 		}
 
-		if ( $atts['show_past'] !== 'true' ) {
+		$month   = self::month_range( (string) $atts['month'] );
+		$running = absint( $atts['running'] );
+
+		if ( $running > 0 ) {
+			// "Now showing": dates that started within the last N days, newest first.
+			$now                  = current_time( 'timestamp' ); // phpcs:ignore WordPress.DateTime.CurrentTimeTimestamp.Requested -- Site time is wanted here.
+			$args['start_after']  = gmdate( 'Y-m-d 00:00:00', $now - $running * DAY_IN_SECONDS );
+			$args['start_before'] = gmdate( 'Y-m-d H:i:s', $now );
+			$args['order']        = 'DESC';
+		} elseif ( $month ) {
+			// A whole month, past days included.
+			$args['start_after']  = $month[0];
+			$args['start_before'] = $month[1];
+		} elseif ( $atts['show_past'] !== 'true' ) {
 			// Running events (started, not yet ended) stay in the list.
 			$args['ends_after'] = current_time( 'mysql' );
 		}
@@ -189,6 +204,44 @@ class ThreeCal_Shortcode {
 				'current_page'    => $args['page'],
 				'page_param'      => $page_param,
 			)
+		);
+	}
+
+	/**
+	 * First and last second of a month for the "month" attribute.
+	 *
+	 * @param string $value "current", "next" or a month such as "2026-10".
+	 * @return array|null Start and end as MySQL dates, or null.
+	 */
+	private static function month_range( $value ) {
+		$value = strtolower( trim( $value ) );
+		if ( '' === $value ) {
+			return null;
+		}
+
+		$now = current_time( 'timestamp' ); // phpcs:ignore WordPress.DateTime.CurrentTimeTimestamp.Requested -- Site time is wanted here.
+		if ( 'current' === $value ) {
+			$year  = (int) gmdate( 'Y', $now );
+			$month = (int) gmdate( 'n', $now );
+		} elseif ( 'next' === $value ) {
+			$year  = (int) gmdate( 'Y', $now );
+			$month = (int) gmdate( 'n', $now ) + 1;
+			if ( $month > 12 ) {
+				$month = 1;
+				$year++;
+			}
+		} elseif ( preg_match( '/^(\d{4})-(\d{1,2})$/', $value, $m ) && (int) $m[2] >= 1 && (int) $m[2] <= 12 ) {
+			$year  = (int) $m[1];
+			$month = (int) $m[2];
+		} else {
+			return null;
+		}
+
+		$days = (int) gmdate( 't', gmmktime( 0, 0, 0, $month, 1, $year ) );
+
+		return array(
+			sprintf( '%04d-%02d-01 00:00:00', $year, $month ),
+			sprintf( '%04d-%02d-%02d 23:59:59', $year, $month, $days ),
 		);
 	}
 

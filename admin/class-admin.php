@@ -341,7 +341,7 @@ class ThreeCal_Admin {
                         <span class="threecal-admin-upcoming-text">
                             <a href="<?php echo esc_url( $edit ); ?>"><?php echo esc_html( $event->title ); ?></a>
                             <span class="threecal-muted">
-                                <?php echo esc_html( $event->all_day ? __( 'All day', '3task-calendar' ) : date_i18n( get_option( 'time_format' ), $start ) ); ?>
+                                <?php echo esc_html( $event->all_day ? __( 'All day', '3task-calendar' ) : date_i18n( threecal_time_format(), $start ) ); ?>
                                 <?php if ( $event->parent_id ) : ?> · <?php esc_html_e( 'Series', '3task-calendar' ); ?><?php endif; ?>
                             </span>
                         </span>
@@ -545,9 +545,9 @@ class ThreeCal_Admin {
                     <span class="threecal-event-row-main">
                         <a class="threecal-event-row-title" href="<?php echo esc_url( $edit_url ); ?>"><?php echo esc_html( $event->title ); ?></a>
                         <span class="threecal-event-row-meta">
-                            <span><?php ThreeCal_Icons::render( 'clock', 14 ); ?><?php echo esc_html( date_i18n( get_option( 'date_format' ), $start ) . ( $event->all_day ? ' · ' . __( 'All day', '3task-calendar' ) : ' · ' . date_i18n( get_option( 'time_format' ), $start ) ) ); ?></span>
+                            <span><?php ThreeCal_Icons::render( 'clock', 14 ); ?><?php echo esc_html( date_i18n( threecal_date_format(), $start ) . ( $event->all_day ? ' · ' . __( 'All day', '3task-calendar' ) : ' · ' . date_i18n( threecal_time_format(), $start ) ) ); ?></span>
                             <?php if ( ! empty( $event->recurrence_rule ) && isset( $rules[ $event->recurrence_rule ] ) ) : ?>
-                            <span class="threecal-series-badge"><?php ThreeCal_Icons::render( 'repeat', 12 ); ?><?php echo esc_html( $rules[ $event->recurrence_rule ] ); ?><?php if ( $event->recurrence_end ) : ?>, <?php echo esc_html( sprintf( /* translators: %s: end date of a series */ __( 'until %s', '3task-calendar' ), date_i18n( get_option( 'date_format' ), strtotime( $event->recurrence_end ) ) ) ); ?><?php endif; ?></span>
+                            <span class="threecal-series-badge"><?php ThreeCal_Icons::render( 'repeat', 12 ); ?><?php echo esc_html( $rules[ $event->recurrence_rule ] ); ?><?php if ( $event->recurrence_end ) : ?>, <?php echo esc_html( sprintf( /* translators: %s: end date of a series */ __( 'until %s', '3task-calendar' ), date_i18n( threecal_date_format(), strtotime( $event->recurrence_end ) ) ) ); ?><?php endif; ?></span>
                             <?php endif; ?>
                             <?php foreach ( $ecats as $cat ) : ?>
                             <span class="threecal-cat-chip" style="<?php echo esc_attr( ThreeCal_Themes::event_style( sanitize_hex_color( (string) $cat->color ) ) ); ?>"><?php echo esc_html( $cat->name ); ?></span>
@@ -597,8 +597,8 @@ class ThreeCal_Admin {
             // Merge with the stored settings so fields that are not part of this form stay untouched.
             $settings = (array) get_option( 'threecal_settings', array() );
 
-            $settings['date_format']              = isset( $_POST['date_format'] ) ? sanitize_text_field( wp_unslash( $_POST['date_format'] ) ) : get_option( 'date_format' );
-            $settings['time_format']              = isset( $_POST['time_format'] ) ? sanitize_text_field( wp_unslash( $_POST['time_format'] ) ) : get_option( 'time_format' );
+            $settings['date_format']              = isset( $_POST['date_format'] ) ? sanitize_text_field( wp_unslash( $_POST['date_format'] ) ) : '';
+            $settings['time_format']              = isset( $_POST['time_format'] ) ? sanitize_text_field( wp_unslash( $_POST['time_format'] ) ) : '';
             $settings['week_starts_on']           = ( isset( $_POST['week_starts_on'] ) && 0 === absint( $_POST['week_starts_on'] ) ) ? 0 : 1;
             $settings['show_event_time']          = ! empty( $_POST['show_event_time'] );
             $settings['show_event_location']      = ! empty( $_POST['show_event_location'] );
@@ -612,8 +612,8 @@ class ThreeCal_Admin {
         $settings = wp_parse_args(
             (array) get_option( 'threecal_settings', array() ),
             array(
-                'date_format'              => get_option( 'date_format' ),
-                'time_format'              => get_option( 'time_format' ),
+                'date_format'              => '',
+                'time_format'              => '',
                 'week_starts_on'           => 1,
                 'show_event_time'          => true,
                 'show_event_location'      => true,
@@ -632,15 +632,15 @@ class ThreeCal_Admin {
                     <tr>
                         <th scope="row"><?php esc_html_e( 'Date Format', '3task-calendar' ); ?></th>
                         <td>
-                            <input type="text" name="date_format" value="<?php echo esc_attr($settings['date_format']); ?>" class="regular-text" />
-                            <p class="description"><?php esc_html_e( 'Date format for displaying events.', '3task-calendar' ); ?></p>
+                            <input type="text" name="date_format" value="<?php echo esc_attr($settings['date_format']); ?>" placeholder="<?php echo esc_attr( get_option( 'date_format' ) ); ?>" class="regular-text" />
+                            <p class="description"><?php esc_html_e( 'Leave empty to use the date format from the WordPress settings.', '3task-calendar' ); ?> <?php /* translators: %s: example date or time */ printf( esc_html__( 'Currently: %s', '3task-calendar' ), esc_html( date_i18n( threecal_date_format() ) ) ); ?></p>
                         </td>
                     </tr>
                     <tr>
                         <th scope="row"><?php esc_html_e( 'Time Format', '3task-calendar' ); ?></th>
                         <td>
-                            <input type="text" name="time_format" value="<?php echo esc_attr($settings['time_format']); ?>" class="regular-text" />
-                            <p class="description"><?php esc_html_e( 'Time format for displaying events.', '3task-calendar' ); ?></p>
+                            <input type="text" name="time_format" value="<?php echo esc_attr($settings['time_format']); ?>" placeholder="<?php echo esc_attr( get_option( 'time_format' ) ); ?>" class="regular-text" />
+                            <p class="description"><?php esc_html_e( 'Leave empty to use the time format from the WordPress settings.', '3task-calendar' ); ?> <?php /* translators: %s: example date or time */ printf( esc_html__( 'Currently: %s', '3task-calendar' ), esc_html( date_i18n( threecal_time_format() ) ) ); ?></p>
                         </td>
                     </tr>
                     <tr>
@@ -840,6 +840,14 @@ class ThreeCal_Admin {
 
                 <h4><?php esc_html_e( 'Posters of the upcoming dates', '3task-calendar' ); ?></h4>
                 <code class="threecal-code-block">[threecal_events view="poster" category="1" columns="4"]</code>
+
+                <h4><?php esc_html_e( 'A whole month', '3task-calendar' ); ?></h4>
+                <code class="threecal-code-block">[threecal_events view="poster" month="current"]</code>
+                <p class="description"><?php esc_html_e( 'month takes current, next or a month such as 2026-10 and shows all dates of that month, past days included. Works with every view.', '3task-calendar' ); ?></p>
+
+                <h4><?php esc_html_e( 'Now showing', '3task-calendar' ); ?></h4>
+                <code class="threecal-code-block">[threecal_events view="poster" running="40"]</code>
+                <p class="description"><?php esc_html_e( 'Lists the dates that started within the last 40 days, newest first. For example films that are in cinemas now.', '3task-calendar' ); ?></p>
             </div>
 
             <!-- Upcoming Events Shortcode -->
@@ -1227,8 +1235,8 @@ class ThreeCal_Admin {
 
         // Every key the plugin reads. A key missing here is lost on the next save.
         $sanitized = array(
-            'date_format'              => sanitize_text_field($input['date_format'] ?? get_option('date_format')),
-            'time_format'              => sanitize_text_field($input['time_format'] ?? get_option('time_format')),
+            'date_format'              => sanitize_text_field($input['date_format'] ?? ''),
+            'time_format'              => sanitize_text_field($input['time_format'] ?? ''),
             'week_starts_on'           => (isset($input['week_starts_on']) && 0 === absint($input['week_starts_on'])) ? 0 : 1,
             'default_view'             => in_array($view, array('month', 'list'), true) ? $view : 'month',
             'default_theme'            => isset($themes[$theme]) ? $theme : 'default',

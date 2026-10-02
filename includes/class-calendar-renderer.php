@@ -40,14 +40,14 @@ class ThreeCal_Calendar_Renderer {
      * Date format from the plugin settings or WordPress.
      */
     private function date_format() {
-        return !empty($this->settings['date_format']) ? $this->settings['date_format'] : get_option('date_format');
+        return threecal_date_format();
     }
 
     /**
      * Time format from the plugin settings or WordPress.
      */
     private function time_format() {
-        return !empty($this->settings['time_format']) ? $this->settings['time_format'] : get_option('time_format');
+        return threecal_time_format();
     }
 
     /**

@@ -34,6 +34,8 @@ Every feature in this plugin is unlocked.
 [threecal]
 [threecal view="list" category="1"]
 [threecal_events view="poster" columns="4"]
+[threecal_events view="poster" month="current"]
+[threecal_events view="poster" running="40"]
 [threecal_upcoming limit="5"]
 [threecal_mini]
 [threecal_post_date]
@@ -47,7 +49,7 @@ Requires WordPress 5.8 and PHP 7.4.
 
 ## Changelog
 
-The full changelog is in [readme.txt](readme.txt). Latest release: **1.4.0** (2 October 2026) with dates from posts, poster view, postponed and cancelled dates.
+The full changelog is in [readme.txt](readme.txt). Latest release: **1.5.0** (2 October 2026) with lists for a whole month, "now showing" and a leave-out field for dates from posts.
 
 ## Pro add-on
 

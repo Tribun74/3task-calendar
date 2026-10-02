@@ -4,7 +4,7 @@ Tags: event calendar, recurring events, ical, gdpr, events
 Requires at least: 5.8
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.4.0
+Stable tag: 1.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -62,7 +62,13 @@ Options: `view` (month, list), `category`, `location`, `theme`, `show_filters`, 
 **Event List:**
 `[threecal_events limit="10"]`
 
-Options: `view` (list, grid, compact, poster), `category`, `location`, `limit` (per page), `columns`, `show_past`, `show_pagination`.
+Options: `view` (list, grid, compact, poster), `category`, `location`, `limit` (per page), `columns`, `show_past`, `show_pagination`, `month` (current, next or a month such as 2026-10), `running` (number of days).
+
+**A Whole Month, for Example "Releases in October":**
+`[threecal_events view="poster" month="2026-10" category="1"]`
+
+**Now Showing (Started Within the Last 40 Days):**
+`[threecal_events view="poster" running="40" category="1"]`
 
 **Posters with Post Images:**
 `[threecal_events view="poster" category="1" columns="4"]`
@@ -160,6 +166,13 @@ Please use the [WordPress.org support forum](https://wordpress.org/support/plugi
 
 == Changelog ==
 
+= 1.5.0 =
+* NEW: A whole month in a list: [threecal_events month="current"], month="next" or month="2026-10", for pages such as "Cinema releases in October"
+* NEW: "Now showing": [threecal_events running="40"] lists the dates that started within the last 40 days, newest first
+* NEW: Dates from posts can leave out posts in which a custom field of your choice is filled, for example a release that is on hold
+* IMPROVED: Date and time format follow the WordPress settings by default; the plugin setting is only needed for a different format and shows the current result
+* Fixed: the date box in posts and the calendar could show different date formats on the same site
+
 = 1.4.0 =
 * NEW: Dates from posts. Switch on a date field for posts, pages or custom post types; the post appears in the calendar and stays in sync (title, link, image, date, draft and trash)
 * NEW: Use a date from an existing custom field (ACF, Meta Box or any plugin) and apply it to all existing posts with one click; the settings list the fields found with count and example
@@ -247,6 +260,9 @@ Please use the [WordPress.org support forum](https://wordpress.org/support/plugi
 * German translation included
 
 == Upgrade Notice ==
+
+= 1.5.0 =
+Lists for a whole month and for dates that are running now. Date and time format follow the WordPress settings by default.
 
 = 1.4.0 =
 Dates straight from your posts, poster view, cancelling single dates of a series. Fixes saving the accent color and the list view.

@@ -44,23 +44,23 @@ msgstr "3task"
 msgid "https://www.3task.de"
 msgstr "https://www.3task.de"
 
-#: 3task-calendar.php:640
-#: 3task-calendar.php:777
+#: 3task-calendar.php:660
+#: 3task-calendar.php:797
 msgid "Event not found"
 msgstr "Termin nicht gefunden"
 
-#: 3task-calendar.php:749
+#: 3task-calendar.php:769
 #: admin/class-admin.php:344
 #: admin/class-admin.php:548
 #: includes/class-calendar-renderer.php:510
 #: includes/class-calendar-renderer.php:778
-#: includes/class-post-dates.php:753
+#: includes/class-post-dates.php:763
 #: public/class-public.php:85
 #: admin/js/post-dates-panel.js:99
 msgid "All day"
 msgstr "Ganztägig"
 
-#: 3task-calendar.php:771
+#: 3task-calendar.php:791
 msgid "Invalid event ID"
 msgstr "Ungültige Termin-ID"
 
@@ -107,14 +107,14 @@ msgstr "Termine"
 #: admin/class-admin.php:146
 #: admin/class-admin.php:316
 #: admin/class-admin.php:359
-#: admin/class-admin.php:1016
+#: admin/class-admin.php:1024
 #: admin/views/categories.php:28
 #: admin/views/event-edit.php:236
 msgid "Categories"
 msgstr "Kategorien"
 
 #: admin/class-admin.php:151
-#: admin/class-admin.php:1021
+#: admin/class-admin.php:1029
 #: admin/views/locations.php:29
 msgid "Locations"
 msgstr "Orte"
@@ -175,7 +175,7 @@ msgid "Upcoming Events"
 msgstr "Kommende Termine"
 
 #: admin/class-admin.php:324
-#: admin/class-admin.php:1173
+#: admin/class-admin.php:1181
 #: includes/class-calendar-renderer.php:669
 msgid "No upcoming events."
 msgstr "Keine kommenden Termine."
@@ -228,13 +228,13 @@ msgstr "Termin-Schema (SEO)"
 
 #: admin/class-admin.php:385
 #: admin/class-admin.php:590
-#: includes/class-post-dates.php:1156
+#: includes/class-post-dates.php:1166
 msgid "You do not have permission to change the calendar settings."
 msgstr "Sie dürfen die Kalender-Einstellungen nicht ändern."
 
 #: admin/class-admin.php:399
 #: admin/class-admin.php:609
-#: includes/class-post-dates.php:1180
+#: includes/class-post-dates.php:1192
 msgid "Settings saved!"
 msgstr "Einstellungen gespeichert!"
 
@@ -338,17 +338,9 @@ msgstr "Allgemeine Einstellungen"
 msgid "Date Format"
 msgstr "Datumsformat"
 
-#: admin/class-admin.php:636
-msgid "Date format for displaying events."
-msgstr "Datumsformat für die Anzeige der Termine."
-
 #: admin/class-admin.php:640
 msgid "Time Format"
 msgstr "Zeitformat"
-
-#: admin/class-admin.php:643
-msgid "Time format for displaying events."
-msgstr "Zeitformat für die Anzeige der Termine."
 
 #: admin/class-admin.php:647
 msgid "Week Starts On"
@@ -422,39 +414,39 @@ msgstr "Zeigt einen interaktiven Kalender mit all Ihren Terminen."
 
 #: admin/class-admin.php:716
 #: admin/class-admin.php:775
-#: admin/class-admin.php:850
-#: admin/class-admin.php:935
+#: admin/class-admin.php:858
+#: admin/class-admin.php:943
 msgid "Basic Usage"
 msgstr "Grundlegende Verwendung"
 
 #: admin/class-admin.php:719
 #: admin/class-admin.php:778
-#: admin/class-admin.php:853
-#: admin/class-admin.php:938
+#: admin/class-admin.php:861
+#: admin/class-admin.php:946
 msgid "All Parameters"
 msgstr "Alle Parameter"
 
 #: admin/class-admin.php:725
 #: admin/class-admin.php:784
-#: admin/class-admin.php:859
-#: admin/class-admin.php:905
-#: admin/class-admin.php:944
+#: admin/class-admin.php:867
+#: admin/class-admin.php:913
+#: admin/class-admin.php:952
 msgid "Parameter"
 msgstr "Parameter"
 
 #: admin/class-admin.php:726
 #: admin/class-admin.php:785
-#: admin/class-admin.php:860
-#: admin/class-admin.php:906
-#: admin/class-admin.php:945
+#: admin/class-admin.php:868
+#: admin/class-admin.php:914
+#: admin/class-admin.php:953
 msgid "Default"
 msgstr "Standard"
 
 #: admin/class-admin.php:727
 #: admin/class-admin.php:786
-#: admin/class-admin.php:861
-#: admin/class-admin.php:907
-#: admin/class-admin.php:946
+#: admin/class-admin.php:869
+#: admin/class-admin.php:915
+#: admin/class-admin.php:954
 #: admin/views/categories.php:91
 #: admin/views/event-edit.php:104
 #: admin/views/locations.php:121
@@ -466,7 +458,7 @@ msgid "Calendar view: month or list"
 msgstr "Ansicht: Monat oder Liste"
 
 #: admin/class-admin.php:739
-#: admin/class-admin.php:953
+#: admin/class-admin.php:961
 msgid "Filter by category ID (0 = show all)"
 msgstr "Nach Kategorie-ID filtern (0 = alle)"
 
@@ -487,12 +479,12 @@ msgid "Show color legend for categories"
 msgstr "Farblegende der Kategorien anzeigen"
 
 #: admin/class-admin.php:763
-#: admin/class-admin.php:967
+#: admin/class-admin.php:975
 msgid "(from settings)"
 msgstr "(aus den Einstellungen)"
 
 #: admin/class-admin.php:764
-#: admin/class-admin.php:968
+#: admin/class-admin.php:976
 msgid "0 = Sunday, 1 = Monday"
 msgstr "0 = Sonntag, 1 = Montag"
 
@@ -505,7 +497,7 @@ msgid "Display events as a list or grid."
 msgstr "Termine als Liste oder Raster anzeigen."
 
 #: admin/class-admin.php:793
-#: admin/class-admin.php:873
+#: admin/class-admin.php:881
 msgid "Filter by category ID"
 msgstr "Nach Kategorie-ID filtern"
 
@@ -521,241 +513,241 @@ msgstr "Vergangene Termine einbeziehen"
 msgid "Show pagination controls"
 msgstr "Seitennavigation anzeigen"
 
-#: admin/class-admin.php:847
+#: admin/class-admin.php:855
 msgid "Upcoming Events Shortcode"
 msgstr "Shortcode kommende Termine"
 
-#: admin/class-admin.php:848
+#: admin/class-admin.php:856
 msgid "Perfect for sidebars and widgets. Shows a compact list of upcoming events."
 msgstr "Passt in Seitenleisten und Widgets. Zeigt eine kompakte Liste der kommenden Termine."
 
-#: admin/class-admin.php:868
+#: admin/class-admin.php:876
 msgid "Number of events to show"
 msgstr "Anzahl der Termine"
 
-#: admin/class-admin.php:878
+#: admin/class-admin.php:886
 msgid "Display event date"
 msgstr "Datum anzeigen"
 
-#: admin/class-admin.php:883
+#: admin/class-admin.php:891
 msgid "Display event time"
 msgstr "Uhrzeit anzeigen"
 
-#: admin/class-admin.php:888
+#: admin/class-admin.php:896
 msgid "Display event location"
 msgstr "Ort anzeigen"
 
-#: admin/class-admin.php:896
+#: admin/class-admin.php:904
 msgid "Single Event Shortcode"
 msgstr "Shortcode Einzeltermin"
 
-#: admin/class-admin.php:897
+#: admin/class-admin.php:905
 msgid "Display a specific event by its ID."
 msgstr "Einen bestimmten Termin über seine ID anzeigen."
 
-#: admin/class-admin.php:899
+#: admin/class-admin.php:907
 msgid "Usage"
 msgstr "Verwendung"
 
-#: admin/class-admin.php:913
+#: admin/class-admin.php:921
 msgid "(required)"
 msgstr "(Pflicht)"
 
-#: admin/class-admin.php:914
+#: admin/class-admin.php:922
 msgid "The event ID to display"
 msgstr "ID des anzuzeigenden Termins"
 
-#: admin/class-admin.php:919
+#: admin/class-admin.php:927
 msgid "Show location map (requires Google Maps API key)"
 msgstr "Karte zum Ort anzeigen (benötigt einen Google-Maps-API-Schlüssel)"
 
-#: admin/class-admin.php:924
+#: admin/class-admin.php:932
 msgid "Show full event description"
 msgstr "Vollständige Beschreibung anzeigen"
 
-#: admin/class-admin.php:932
+#: admin/class-admin.php:940
 msgid "Mini Calendar Shortcode"
 msgstr "Shortcode Mini-Kalender"
 
-#: admin/class-admin.php:933
+#: admin/class-admin.php:941
 msgid "Perfect for sidebar widgets! A compact month view with event markers."
 msgstr "Ideal für Seitenleisten: eine kompakte Monatsansicht mit Markierungen an Tagen mit Terminen."
 
-#: admin/class-admin.php:958
+#: admin/class-admin.php:966
 msgid "Show previous/next month navigation"
 msgstr "Navigation zum vorigen und nächsten Monat anzeigen"
 
-#: admin/class-admin.php:963
+#: admin/class-admin.php:971
 msgid "Show \"Today\" link at the bottom"
 msgstr "Link „Heute“ unten anzeigen"
 
-#: admin/class-admin.php:974
+#: admin/class-admin.php:982
 msgid "Widget Tip:"
 msgstr "Tipp für Widgets:"
 
-#: admin/class-admin.php:975
+#: admin/class-admin.php:983
 msgid "This is the ideal shortcode for sidebars! Days with events show colored dots. Click a day to see its events."
 msgstr "Der passende Shortcode für Seitenleisten. Tage mit Terminen haben einen farbigen Punkt, ein Klick zeigt die Termine des Tages."
 
-#: admin/class-admin.php:981
+#: admin/class-admin.php:989
 msgid "Using in Widgets"
 msgstr "Verwendung in Widgets"
 
-#: admin/class-admin.php:982
+#: admin/class-admin.php:990
 msgid "All shortcodes work in widgets! Here are the best options for sidebars:"
 msgstr "Alle Shortcodes funktionieren in Widgets. Für Seitenleisten eignen sich besonders:"
 
-#: admin/class-admin.php:984
+#: admin/class-admin.php:992
 msgid "Block Editor (Recommended)"
 msgstr "Block-Editor (empfohlen)"
 
-#: admin/class-admin.php:986
+#: admin/class-admin.php:994
 msgid "Go to Appearance > Widgets"
 msgstr "Öffnen Sie Design > Widgets"
 
-#: admin/class-admin.php:987
+#: admin/class-admin.php:995
 msgid "Add a \"Shortcode\" block to your widget area"
 msgstr "Fügen Sie Ihrem Widget-Bereich einen Block „Shortcode“ hinzu"
 
-#: admin/class-admin.php:988
+#: admin/class-admin.php:996
 msgid "Enter the shortcode, e.g.:"
 msgstr "Tragen Sie den Shortcode ein, zum Beispiel:"
 
-#: admin/class-admin.php:991
+#: admin/class-admin.php:999
 msgid "Classic Widgets"
 msgstr "Klassische Widgets"
 
-#: admin/class-admin.php:993
+#: admin/class-admin.php:1001
 msgid "Add a \"Text\" widget (the \"Custom HTML\" widget does not run shortcodes)"
 msgstr "Fügen Sie ein Widget „Text“ hinzu (das Widget „Individuelles HTML“ führt keine Shortcodes aus)"
 
-#: admin/class-admin.php:994
+#: admin/class-admin.php:1002
 msgid "Enter the shortcode in the content area"
 msgstr "Tragen Sie den Shortcode in den Inhaltsbereich ein"
 
-#: admin/class-admin.php:998
+#: admin/class-admin.php:1006
 msgid "Best Widget Shortcodes:"
 msgstr "Die besten Shortcodes für Widgets:"
 
-#: admin/class-admin.php:999
+#: admin/class-admin.php:1007
 msgid "Compact month view with event markers (recommended!)"
 msgstr "Kompakte Monatsansicht mit Markierungen (empfohlen)"
 
-#: admin/class-admin.php:1000
+#: admin/class-admin.php:1008
 msgid "Simple list of upcoming events"
 msgstr "Einfache Liste der kommenden Termine"
 
-#: admin/class-admin.php:1006
+#: admin/class-admin.php:1014
 msgid "Features Overview"
 msgstr "Funktionen im Überblick"
 
-#: admin/class-admin.php:1011
+#: admin/class-admin.php:1019
 msgid "Interactive Calendar"
 msgstr "Interaktiver Kalender"
 
-#: admin/class-admin.php:1012
+#: admin/class-admin.php:1020
 msgid "Month and list views with navigation"
 msgstr "Monats- und Listenansicht mit Navigation"
 
-#: admin/class-admin.php:1017
+#: admin/class-admin.php:1025
 msgid "Organize events with color-coded categories"
 msgstr "Termine mit farbigen Kategorien ordnen"
 
-#: admin/class-admin.php:1022
+#: admin/class-admin.php:1030
 msgid "Add venues with their address"
 msgstr "Veranstaltungsorte mit Adresse anlegen"
 
-#: admin/class-admin.php:1026
+#: admin/class-admin.php:1034
 msgid "Responsive Design"
 msgstr "Responsives Design"
 
-#: admin/class-admin.php:1027
+#: admin/class-admin.php:1035
 msgid "Adapts to small screens"
 msgstr "Passt sich kleinen Bildschirmen an"
 
-#: admin/class-admin.php:1031
+#: admin/class-admin.php:1039
 msgid "Filters"
 msgstr "Filter"
 
-#: admin/class-admin.php:1032
+#: admin/class-admin.php:1040
 msgid "Let visitors filter by category or location"
 msgstr "Besucher können nach Kategorie oder Ort filtern"
 
-#: admin/class-admin.php:1036
+#: admin/class-admin.php:1044
 msgid "Customizable"
 msgstr "Anpassbar"
 
-#: admin/class-admin.php:1037
+#: admin/class-admin.php:1045
 msgid "Five themes and several display options"
 msgstr "Fünf Designs und mehrere Anzeigeoptionen"
 
-#: admin/class-admin.php:1044
+#: admin/class-admin.php:1052
 msgid "Finding Category and Location IDs"
 msgstr "Kategorie- und Orts-IDs finden"
 
-#: admin/class-admin.php:1045
+#: admin/class-admin.php:1053
 msgid "To filter events by category or location, you need their IDs:"
 msgstr "Zum Filtern nach Kategorie oder Ort benötigen Sie deren IDs:"
 
-#: admin/class-admin.php:1047
+#: admin/class-admin.php:1055
 msgid "Go to the Categories or Locations tab"
 msgstr "Öffnen Sie den Reiter Kategorien oder Orte"
 
-#: admin/class-admin.php:1048
+#: admin/class-admin.php:1056
 msgid "Click \"Edit\" on the item you want"
 msgstr "Klicken Sie beim gewünschten Eintrag auf „Bearbeiten“"
 
-#: admin/class-admin.php:1049
+#: admin/class-admin.php:1057
 msgid "Look at the URL - the number after \"edit=\" is the ID"
 msgstr "Sehen Sie sich die Adresse an: Die Zahl nach „edit=“ ist die ID"
 
-#: admin/class-admin.php:1051
+#: admin/class-admin.php:1059
 msgid "Example: admin.php?page=3task-calendar&tab=categories&edit=5 means the ID is 5"
 msgstr "Beispiel: admin.php?page=3task-calendar&tab=categories&edit=5 bedeutet ID 5"
 
-#: admin/class-admin.php:1056
+#: admin/class-admin.php:1064
 msgid "Need More Help?"
 msgstr "Weitere Hilfe"
 
 #. translators: %s: Support forum URL
-#: admin/class-admin.php:1061
+#: admin/class-admin.php:1069
 #, php-format
 msgid "Visit our %s for questions and feature requests."
 msgstr "Für Fragen und Wünsche erreichen Sie uns im %s."
 
-#: admin/class-admin.php:1062
+#: admin/class-admin.php:1070
 msgid "support forum"
 msgstr "Support-Forum"
 
-#: admin/class-admin.php:1319
-#: admin/class-admin.php:1437
-#: admin/class-admin.php:1460
-#: admin/class-admin.php:1523
-#: admin/class-admin.php:1569
-#: admin/class-admin.php:1588
-#: admin/class-admin.php:1629
-#: includes/class-post-dates.php:1104
+#: admin/class-admin.php:1327
+#: admin/class-admin.php:1445
+#: admin/class-admin.php:1468
+#: admin/class-admin.php:1531
+#: admin/class-admin.php:1577
+#: admin/class-admin.php:1596
+#: admin/class-admin.php:1637
+#: includes/class-post-dates.php:1114
 msgid "Permission denied."
 msgstr "Keine Berechtigung."
 
-#: admin/class-admin.php:1329
+#: admin/class-admin.php:1337
 #: admin/views/event-edit.php:22
 msgid "Event not found."
 msgstr "Termin nicht gefunden."
 
-#: admin/class-admin.php:1359
+#: admin/class-admin.php:1367
 msgid "Please enter a title and a valid start date."
 msgstr "Bitte geben Sie einen Titel und ein gültiges Startdatum ein."
 
-#: admin/class-admin.php:1411
+#: admin/class-admin.php:1419
 msgid "Error saving event."
 msgstr "Der Termin konnte nicht gespeichert werden."
 
-#: admin/class-admin.php:1533
+#: admin/class-admin.php:1541
 msgid "Location not found."
 msgstr "Ort nicht gefunden."
 
-#: admin/class-admin.php:1598
+#: admin/class-admin.php:1606
 msgid "Category not found."
 msgstr "Kategorie nicht gefunden."
 
@@ -1104,19 +1096,19 @@ msgstr "weitere"
 #: includes/class-calendar-renderer.php:432
 #: includes/class-calendar-renderer.php:535
 #: includes/class-calendar-renderer.php:636
-#: includes/class-post-dates.php:1023
+#: includes/class-post-dates.php:1033
 #: public/class-public.php:89
 msgid "Add to my calendar"
 msgstr "In meinen Kalender eintragen"
 
 #: includes/class-calendar-renderer.php:588
-#: includes/class-post-dates.php:749
+#: includes/class-post-dates.php:759
 #: admin/js/post-dates-panel.js:89
 msgid "Date"
 msgstr "Datum"
 
 #: includes/class-calendar-renderer.php:602
-#: includes/class-post-dates.php:751
+#: includes/class-post-dates.php:761
 #: admin/js/post-dates-panel.js:110
 msgid "Time"
 msgstr "Uhrzeit"
@@ -1486,7 +1478,7 @@ msgstr "Termin gelöscht."
 msgid "The date was removed from the series."
 msgstr "Das Datum wurde aus der Serie entfernt."
 
-#: admin/class-admin.php:1465
+#: admin/class-admin.php:1473
 msgid "This date could not be changed."
 msgstr "Dieses Datum ließ sich nicht ändern."
 
@@ -1556,191 +1548,191 @@ msgstr "Beitrag bearbeiten"
 msgid "Separate event"
 msgstr "Eigener Termin"
 
-#: includes/class-post-dates.php:186
-#: includes/class-post-dates.php:1247
+#: includes/class-post-dates.php:187
+#: includes/class-post-dates.php:1260
 msgid "Event date"
 msgstr "Termin"
 
 #. translators: %s: the date before it was moved
-#: includes/class-post-dates.php:578
+#: includes/class-post-dates.php:588
 #, php-format
 msgid "Postponed, previously %s"
 msgstr "Verschoben, vorher %s"
 
-#: includes/class-post-dates.php:731
+#: includes/class-post-dates.php:741
 #: admin/js/post-dates-panel.js:48
 msgid "No date yet."
 msgstr "Noch kein Datum."
 
 #. translators: %s: name of the custom field
-#: includes/class-post-dates.php:735
+#: includes/class-post-dates.php:745
 #: admin/js/post-dates-panel.js:50
 #, php-format,js-format
 msgid "Taken from the field %s."
 msgstr "Übernommen aus dem Feld %s."
 
-#: includes/class-post-dates.php:738
+#: includes/class-post-dates.php:748
 msgid "Do not show in the calendar"
 msgstr "Nicht im Kalender zeigen"
 
-#: includes/class-post-dates.php:747
+#: includes/class-post-dates.php:757
 #: admin/js/post-dates-panel.js:53
 #: admin/js/post-dates-panel.js:77
 msgid "Show in the calendar"
 msgstr "Im Kalender zeigen"
 
-#: includes/class-post-dates.php:755
+#: includes/class-post-dates.php:765
 #: admin/js/post-dates-panel.js:122
 msgid "End (optional)"
 msgstr "Ende (optional)"
 
-#: includes/class-post-dates.php:757
+#: includes/class-post-dates.php:767
 #: admin/js/post-dates-panel.js:134
 msgid "End time"
 msgstr "Uhrzeit Ende"
 
-#: includes/class-post-dates.php:1110
+#: includes/class-post-dates.php:1120
 msgid "Unknown post type."
 msgstr "Unbekannte Inhaltsart."
 
-#: includes/class-post-dates.php:1182
+#: includes/class-post-dates.php:1194
 msgid "The posts are being checked now, please keep this page open for a moment."
 msgstr "Die Beiträge werden jetzt abgeglichen, lassen Sie diese Seite bitte kurz offen."
 
 #. translators: 1: posts done, 2: all posts
-#: includes/class-post-dates.php:1195
+#: includes/class-post-dates.php:1207
 #, php-format
 msgid "%1$s of %2$s posts checked"
 msgstr "%1$s von %2$s Beiträgen abgeglichen"
 
-#: includes/class-post-dates.php:1196
+#: includes/class-post-dates.php:1208
 msgid "Done."
 msgstr "Fertig."
 
-#: includes/class-post-dates.php:1197
+#: includes/class-post-dates.php:1209
 msgid "That did not work. Please reload the page and try again."
 msgstr "Das hat nicht geklappt. Bitte laden Sie die Seite neu und versuchen Sie es noch einmal."
 
 #: admin/class-admin.php:831
-#: includes/class-post-dates.php:1207
+#: includes/class-post-dates.php:1219
 msgid "Dates from posts"
 msgstr "Termine aus Beiträgen"
 
-#: includes/class-post-dates.php:1208
+#: includes/class-post-dates.php:1220
 msgid "Set a date while you write a post, for example the cinema release of a film, a release date or a match day. The post then appears in the calendar by itself and stays in sync: title, link, image and date come from the post, a draft or a deleted post disappears from the calendar."
 msgstr "Tragen Sie das Datum direkt beim Schreiben eines Beitrags ein, zum Beispiel den Kinostart eines Films, einen Erscheinungstermin oder einen Spieltag. Der Beitrag steht dann von selbst im Kalender und bleibt aktuell: Titel, Link, Bild und Datum kommen aus dem Beitrag, ein Entwurf oder ein gelöschter Beitrag verschwindet aus dem Kalender."
 
-#: includes/class-post-dates.php:1209
+#: includes/class-post-dates.php:1221
 msgid "The date can also come from a field you already use, for example from Advanced Custom Fields or another plugin. Then nothing has to be entered twice."
 msgstr "Das Datum kann auch aus einem Feld kommen, das Sie schon nutzen, zum Beispiel aus Advanced Custom Fields oder einem anderen Plugin. Dann muss nichts doppelt eingetragen werden."
 
-#: includes/class-post-dates.php:1233
+#: includes/class-post-dates.php:1246
 msgid "Date in the editor"
 msgstr "Datum im Editor"
 
 #. translators: %s: post type name, for example "Posts"
-#: includes/class-post-dates.php:1239
+#: includes/class-post-dates.php:1252
 #, php-format
 msgid "Offer a date for %s"
 msgstr "Datum für %s anbieten"
 
-#: includes/class-post-dates.php:1245
+#: includes/class-post-dates.php:1258
 msgid "Name of the field"
 msgstr "Name des Feldes"
 
-#: includes/class-post-dates.php:1248
+#: includes/class-post-dates.php:1261
 msgid "For example \"Cinema release\", \"Release date\" or \"Match day\". Appears in the editor, in the post list and in the box in the post."
 msgstr "Zum Beispiel „Kinostart“, „Erscheinungstermin“ oder „Spieltag“. Erscheint im Editor, in der Beitragsliste und im Kasten im Beitrag."
 
-#: includes/class-post-dates.php:1252
+#: includes/class-post-dates.php:1265
 msgid "Calendar category"
 msgstr "Kalender-Kategorie"
 
-#: includes/class-post-dates.php:1255
+#: includes/class-post-dates.php:1268
 msgid "No category"
 msgstr "Keine Kategorie"
 
-#: includes/class-post-dates.php:1264
+#: includes/class-post-dates.php:1277
 msgid "Date comes from"
 msgstr "Datum kommt aus"
 
-#: includes/class-post-dates.php:1267
+#: includes/class-post-dates.php:1280
 msgid "Its own field in the editor"
 msgstr "Eigenes Feld im Editor"
 
 #. translators: 1: name of the custom field, 2: number of posts, 3: example value
-#: includes/class-post-dates.php:1272
+#: includes/class-post-dates.php:1285
 #, php-format
 msgid "%1$s (%2$s post, e.g. %3$s)"
 msgid_plural "%1$s (%2$s posts, e.g. %3$s)"
 msgstr[0] "%1$s (%2$s Beitrag, z. B. %3$s)"
 msgstr[1] "%1$s (%2$s Beiträge, z. B. %3$s)"
 
-#: includes/class-post-dates.php:1276
+#: includes/class-post-dates.php:1289
 msgid "Another field …"
 msgstr "Anderes Feld …"
 
-#: includes/class-post-dates.php:1278
+#: includes/class-post-dates.php:1291
 msgid "Name of the custom field"
 msgstr "Feldname"
 
-#: includes/class-post-dates.php:1283
+#: includes/class-post-dates.php:1303
 msgid "Box in the post"
 msgstr "Kasten im Beitrag"
 
-#: includes/class-post-dates.php:1286
+#: includes/class-post-dates.php:1306
 msgid "Only where I add the block or shortcode"
 msgstr "Nur dort, wo ich den Block oder Shortcode einsetze"
 
-#: includes/class-post-dates.php:1287
+#: includes/class-post-dates.php:1307
 msgid "Automatically at the start of the post"
 msgstr "Automatisch am Anfang des Beitrags"
 
-#: includes/class-post-dates.php:1288
+#: includes/class-post-dates.php:1308
 msgid "Automatically at the end of the post"
 msgstr "Automatisch am Ende des Beitrags"
 
-#: includes/class-post-dates.php:1290
+#: includes/class-post-dates.php:1310
 msgid "Shows the date with an \"Add to my calendar\" button. Block \"Date of this post\" or shortcode [threecal_post_date]."
 msgstr "Zeigt das Datum mit dem Knopf „In meinen Kalender eintragen“. Block „Termin dieses Beitrags“ oder Shortcode [threecal_post_date]."
 
-#: includes/class-post-dates.php:1295
+#: includes/class-post-dates.php:1315
 msgid "In the calendar"
 msgstr "Im Kalender"
 
-#: includes/class-post-dates.php:1304
+#: includes/class-post-dates.php:1324
 msgid "Apply to existing posts"
 msgstr "Bestand übernehmen"
 
-#: includes/class-post-dates.php:1307
+#: includes/class-post-dates.php:1327
 msgid "Goes through all posts once and puts every date into the calendar. Takes a few seconds on large sites."
 msgstr "Geht einmal alle Beiträge durch und trägt jedes Datum in den Kalender ein. Dauert auf großen Seiten ein paar Sekunden."
 
-#: includes/class-post-dates.php:1316
+#: includes/class-post-dates.php:1336
 msgid "Postponed dates"
 msgstr "Verschobene Termine"
 
-#: includes/class-post-dates.php:1319
+#: includes/class-post-dates.php:1339
 msgid "Show \"Postponed, previously …\" when the date of a published post moves"
 msgstr "„Verschoben, vorher …“ zeigen, wenn sich das Datum eines veröffentlichten Beitrags ändert"
 
-#: includes/class-post-dates.php:1321
+#: includes/class-post-dates.php:1341
 msgid "Release dates often move. Calendar subscribers get the new date automatically either way."
 msgstr "Erscheinungstermine verschieben sich oft. Wer den Kalender abonniert hat, bekommt das neue Datum in jedem Fall automatisch."
 
-#: includes/class-post-dates.php:1325
+#: includes/class-post-dates.php:1345
 msgid "Showing the dates"
 msgstr "Termine anzeigen"
 
-#: includes/class-post-dates.php:1326
+#: includes/class-post-dates.php:1346
 msgid "Dates from posts appear in every calendar. A calendar or list of their own uses the category:"
 msgstr "Termine aus Beiträgen erscheinen in jedem Kalender. Ein eigener Kalender oder eine eigene Liste nutzt die Kategorie:"
 
-#: includes/class-post-dates.php:1330
+#: includes/class-post-dates.php:1350
 msgid "Replace 1 with the ID of the category, it is shown in the Categories tab. The poster view shows the post images as large tiles, for example for \"This week at the cinema\"."
 msgstr "Ersetzen Sie die 1 durch die Nummer der Kategorie, sie steht im Reiter Kategorien. Die Poster-Ansicht zeigt die Beitragsbilder als große Kacheln, etwa für „Diese Woche im Kino“."
 
-#: includes/class-post-dates.php:1334
+#: includes/class-post-dates.php:1354
 msgid "Save Settings"
 msgstr "Einstellungen speichern"
 
@@ -1774,11 +1766,11 @@ msgstr "Datum"
 msgid "The date of this post appears here once it is set and the post is published."
 msgstr "Das Datum dieses Beitrags erscheint hier, sobald es eingetragen und der Beitrag veröffentlicht ist."
 
-#: includes/class-post-dates.php:1260
+#: includes/class-post-dates.php:1273
 msgid "Gives the dates their color and lets you show them in a calendar of their own. Release dates are not events for Google: tick \"Not an event for search engines\" in this category."
 msgstr "Gibt den Terminen ihre Farbe und erlaubt einen eigenen Kalender nur für sie. Erscheinungstermine sind für Google keine Veranstaltungen: Setzen Sie in dieser Kategorie das Häkchen „Für Suchmaschinen keine Veranstaltung“."
 
-#: includes/class-post-dates.php:1279
+#: includes/class-post-dates.php:1292
 msgid "With an existing field every post with a date is in the calendar, a switch in the editor takes a single post out. Dates such as 2026-10-01, 20261001 (ACF), 01.10.2026 and Unix timestamps are read. The list shows the fields found with their number and an example, so the right one is easy to spot."
 msgstr "Mit einem vorhandenen Feld steht jeder Beitrag mit Datum im Kalender, ein Schalter im Editor nimmt einzelne Beiträge heraus. Gelesen werden Daten wie 2026-10-01, 20261001 (ACF), 01.10.2026 und Unix-Zeitstempel. Die Liste zeigt die gefundenen Felder mit Anzahl und Beispiel, so ist das richtige schnell zu erkennen."
 
@@ -1813,3 +1805,46 @@ msgstr "Im Beitrag zeigt er das Datum dieses Beitrags. Mit id=\"123\" das Datum 
 #: admin/class-admin.php:841
 msgid "Posters of the upcoming dates"
 msgstr "Poster der kommenden Termine"
+
+#: admin/class-admin.php:636
+msgid "Leave empty to use the date format from the WordPress settings."
+msgstr "Leer lassen, um das Datumsformat aus den WordPress-Einstellungen zu verwenden."
+
+#. translators: %s: example date or time
+#: admin/class-admin.php:636
+#: admin/class-admin.php:643
+#, php-format
+msgid "Currently: %s"
+msgstr "Aktuell: %s"
+
+#: admin/class-admin.php:643
+msgid "Leave empty to use the time format from the WordPress settings."
+msgstr "Leer lassen, um das Zeitformat aus den WordPress-Einstellungen zu verwenden."
+
+#: admin/class-admin.php:844
+msgid "A whole month"
+msgstr "Ein ganzer Monat"
+
+#: admin/class-admin.php:846
+msgid "month takes current, next or a month such as 2026-10 and shows all dates of that month, past days included. Works with every view."
+msgstr "month nimmt current, next oder einen Monat wie 2026-10 und zeigt alle Termine dieses Monats, auch die vergangenen Tage. Funktioniert mit jeder Ansicht."
+
+#: admin/class-admin.php:848
+msgid "Now showing"
+msgstr "Läuft gerade"
+
+#: admin/class-admin.php:850
+msgid "Lists the dates that started within the last 40 days, newest first. For example films that are in cinemas now."
+msgstr "Listet die Termine, die in den letzten 40 Tagen begonnen haben, die neuesten zuerst. Zum Beispiel Filme, die gerade im Kino laufen."
+
+#: includes/class-post-dates.php:1296
+msgid "Leave out when"
+msgstr "Auslassen, wenn"
+
+#: includes/class-post-dates.php:1298
+msgid "Name of a custom field (optional)"
+msgstr "Name eines individuellen Feldes (optional)"
+
+#: includes/class-post-dates.php:1299
+msgid "Posts in which this custom field is filled (anything but empty or 0) stay out of the calendar. For example a field that marks a release as on hold."
+msgstr "Beiträge, in denen dieses individuelle Feld gefüllt ist (alles außer leer oder 0), bleiben dem Kalender fern. Zum Beispiel ein Feld, das einen Start als verschoben auf unbestimmte Zeit markiert."

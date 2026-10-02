@@ -138,6 +138,7 @@ class ThreeCal_Post_Dates {
 				'label'    => '',
 				'category' => 0,
 				'source'   => '',
+				'skip'     => '',
 				'box'      => 'none',
 			)
 		);
@@ -215,6 +216,7 @@ class ThreeCal_Post_Dates {
 				'label'    => isset( $row['label'] ) ? mb_substr( sanitize_text_field( $row['label'] ), 0, 60 ) : '',
 				'category' => isset( $row['category'] ) ? absint( $row['category'] ) : 0,
 				'source'   => $source,
+				'skip'     => isset( $row['skip'] ) ? self::clean_key( (string) $row['skip'] ) : '',
 				'box'      => in_array( $box, array( 'none', 'before', 'after' ), true ) ? $box : 'none',
 			);
 		}
@@ -319,6 +321,14 @@ class ThreeCal_Post_Dates {
 	 */
 	public static function values( $post, $settings ) {
 		$show = (string) get_post_meta( $post->ID, self::META_SHOW, true );
+
+		// A field that takes posts out of the calendar, for example "release on hold".
+		if ( ! empty( $settings['skip'] ) ) {
+			$skip = get_post_meta( $post->ID, $settings['skip'], true );
+			if ( is_scalar( $skip ) && '' !== (string) $skip && '0' !== (string) $skip ) {
+				return null;
+			}
+		}
 
 		if ( '' !== $settings['source'] ) {
 			// Date from an existing field: on unless switched off in the post.
@@ -516,7 +526,7 @@ class ThreeCal_Post_Dates {
 		if ( null === self::$watch ) {
 			self::$watch = array();
 			foreach ( self::enabled_types() as $settings ) {
-				foreach ( array( self::META_SHOW, self::META_START, self::META_END, self::META_ALL_DAY, '_thumbnail_id', $settings['source'] ) as $key ) {
+				foreach ( array( self::META_SHOW, self::META_START, self::META_END, self::META_ALL_DAY, '_thumbnail_id', $settings['source'], isset( $settings['skip'] ) ? $settings['skip'] : '' ) as $key ) {
 					if ( '' !== $key ) {
 						self::$watch[ $key ] = true;
 					}
@@ -575,7 +585,7 @@ class ThreeCal_Post_Dates {
 			return '';
 		}
 		/* translators: %s: the date before it was moved */
-		return sprintf( __( 'Postponed, previously %s', '3task-calendar' ), date_i18n( get_option( 'date_format' ), strtotime( $previous ) ) );
+		return sprintf( __( 'Postponed, previously %s', '3task-calendar' ), date_i18n( threecal_date_format(), strtotime( $previous ) ) );
 	}
 
 	/* ---------------------------------------------------------------------
@@ -668,9 +678,9 @@ class ThreeCal_Post_Dates {
 		if ( $post && '' !== $settings['source'] ) {
 			$parsed = self::parse_date( get_post_meta( $post->ID, $settings['source'], true ) );
 			if ( $parsed ) {
-				$mapped = date_i18n( get_option( 'date_format' ), strtotime( $parsed[0] ) );
+				$mapped = date_i18n( threecal_date_format(), strtotime( $parsed[0] ) );
 				if ( $parsed[1] ) {
-					$mapped .= ' · ' . date_i18n( get_option( 'time_format' ), strtotime( $parsed[0] ) );
+					$mapped .= ' · ' . date_i18n( threecal_time_format(), strtotime( $parsed[0] ) );
 				}
 			}
 		}
@@ -726,7 +736,7 @@ class ThreeCal_Post_Dates {
 			$parsed = self::parse_date( get_post_meta( $post->ID, $settings['source'], true ) );
 			echo '<p>';
 			if ( $parsed ) {
-				echo esc_html( date_i18n( get_option( 'date_format' ), strtotime( $parsed[0] ) ) );
+				echo esc_html( date_i18n( threecal_date_format(), strtotime( $parsed[0] ) ) );
 			} else {
 				esc_html_e( 'No date yet.', '3task-calendar' );
 			}
@@ -844,9 +854,9 @@ class ThreeCal_Post_Dates {
 		}
 		$event = ThreeCal_Event::get( (int) get_post_meta( $post_id, self::META_EVENT, true ) );
 		$time  = strtotime( $sort );
-		echo esc_html( date_i18n( get_option( 'date_format' ), $time ) );
+		echo esc_html( date_i18n( threecal_date_format(), $time ) );
 		if ( $event && ! $event->all_day ) {
-			echo '<br>' . esc_html( date_i18n( get_option( 'time_format' ), $time ) );
+			echo '<br>' . esc_html( date_i18n( threecal_time_format(), $time ) );
 		}
 		$postponed = self::postponed_text( $event );
 		if ( $postponed ) {
@@ -999,9 +1009,9 @@ class ThreeCal_Post_Dates {
 		$theme    = ThreeCal_Themes::normalize( $theme );
 		$settings = self::type_settings( get_post_type( $post_id ) );
 		$start    = strtotime( $event->start_date );
-		$when     = date_i18n( 'l', $start ) . ', ' . date_i18n( get_option( 'date_format' ), $start );
+		$when     = date_i18n( 'l', $start ) . ', ' . date_i18n( threecal_date_format(), $start );
 		if ( ! $event->all_day ) {
-			$when .= ' · ' . date_i18n( get_option( 'time_format' ), $start );
+			$when .= ' · ' . date_i18n( threecal_time_format(), $start );
 		}
 		$postponed = self::postponed_text( $event );
 		$cancelled = 'cancelled' === $event->status;
@@ -1170,7 +1180,9 @@ class ThreeCal_Post_Dates {
 			foreach ( array_unique( array_merge( array_keys( $before['types'] ), array_keys( $after['types'] ) ) ) as $post_type ) {
 				$old = isset( $before['types'][ $post_type ] ) ? $before['types'][ $post_type ] : null;
 				$new = isset( $after['types'][ $post_type ] ) ? $after['types'][ $post_type ] : null;
-				if ( ! $old || ! $new || $old['source'] !== $new['source'] || (int) $old['category'] !== (int) $new['category'] ) {
+				$old_skip = ( $old && isset( $old['skip'] ) ) ? $old['skip'] : '';
+				$new_skip = ( $new && isset( $new['skip'] ) ) ? $new['skip'] : '';
+				if ( ! $old || ! $new || $old['source'] !== $new['source'] || $old_skip !== $new_skip || (int) $old['category'] !== (int) $new['category'] ) {
 					if ( $new || self::linked_count( $post_type ) ) {
 						$resync[] = $post_type;
 					}
@@ -1220,6 +1232,7 @@ class ThreeCal_Post_Dates {
 					$cat     = isset( $row['category'] ) ? (int) $row['category'] : 0;
 					$source  = isset( $row['source'] ) ? $row['source'] : '';
 					$box     = isset( $row['box'] ) ? $row['box'] : 'none';
+					$skip    = isset( $row['skip'] ) ? $row['skip'] : '';
 					$fields  = self::detect_fields( $post_type );
 					$keys    = wp_list_pluck( $fields, 'key' );
 					$custom  = ( '' !== $source && ! in_array( $source, $keys, true ) );
@@ -1277,6 +1290,13 @@ class ThreeCal_Post_Dates {
 								</select>
 								<input type="text" class="regular-text threecal-source-custom" name="<?php echo esc_attr( $name ); ?>[source_custom]" value="<?php echo esc_attr( $custom ? $source : '' ); ?>" placeholder="<?php esc_attr_e( 'Name of the custom field', '3task-calendar' ); ?>" aria-label="<?php esc_attr_e( 'Name of the custom field', '3task-calendar' ); ?>" <?php echo $custom ? '' : 'hidden'; ?>>
 								<p class="description"><?php esc_html_e( 'With an existing field every post with a date is in the calendar, a switch in the editor takes a single post out. Dates such as 2026-10-01, 20261001 (ACF), 01.10.2026 and Unix timestamps are read. The list shows the fields found with their number and an example, so the right one is easy to spot.', '3task-calendar' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="<?php echo esc_attr( $id_base . '-skip' ); ?>"><?php esc_html_e( 'Leave out when', '3task-calendar' ); ?></label></th>
+							<td>
+								<input type="text" class="regular-text" id="<?php echo esc_attr( $id_base . '-skip' ); ?>" name="<?php echo esc_attr( $name ); ?>[skip]" value="<?php echo esc_attr( $skip ); ?>" placeholder="<?php esc_attr_e( 'Name of a custom field (optional)', '3task-calendar' ); ?>">
+								<p class="description"><?php esc_html_e( 'Posts in which this custom field is filled (anything but empty or 0) stay out of the calendar. For example a field that marks a release as on hold.', '3task-calendar' ); ?></p>
 							</td>
 						</tr>
 						<tr>
