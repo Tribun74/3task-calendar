@@ -127,12 +127,34 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( wp_unslash( $_GET['m
                     ?>
                 </div>
 
+                <!-- Precision: the day is known, or only the month -->
+                <?php $threecal_month_only = $event && $event->is_month_only(); ?>
+                <fieldset class="threecal-field threecal-precision-field">
+                    <legend><?php esc_html_e( 'Date', '3task-calendar' ); ?></legend>
+                    <label>
+                        <input type="radio" name="event_date_precision" value="day" <?php checked( ! $threecal_month_only ); ?>>
+                        <?php esc_html_e( 'The date is known', '3task-calendar' ); ?>
+                    </label>
+                    <label>
+                        <input type="radio" name="event_date_precision" value="month" <?php checked( $threecal_month_only ); ?>>
+                        <?php esc_html_e( 'Only the month is known', '3task-calendar' ); ?>
+                    </label>
+                </fieldset>
+
+                <div class="threecal-field threecal-month-field"<?php echo $threecal_month_only ? '' : ' hidden'; ?>>
+                    <label for="event_start_month"><?php esc_html_e( 'Month', '3task-calendar' ); ?> <span class="required">*</span></label>
+                    <input type="month" id="event_start_month" name="event_start_month" placeholder="2027-07" pattern="[0-9]{4}-[0-9]{2}"
+                           value="<?php echo esc_attr( $event ? substr( (string) $event->start_date, 0, 7 ) : '' ); ?>"<?php echo $threecal_month_only ? ' required' : ''; ?>>
+                    <p class="description"><?php esc_html_e( 'Visitors see the month and "Date to be announced". Until the day is known, the event is not in the calendar subscription and gets no event schema. It cannot repeat.', '3task-calendar' ); ?></p>
+                </div>
+
                 <!-- Date & Time -->
+                <div class="threecal-day-fields"<?php echo $threecal_month_only ? ' hidden' : ''; ?>>
                 <div class="threecal-field-row">
                     <div class="threecal-field threecal-field-half">
                         <label for="event_start_date"><?php esc_html_e( 'Start Date & Time', '3task-calendar' ); ?> <span class="required">*</span></label>
                         <input type="datetime-local" id="event_start_date" name="event_start_date"
-                               value="<?php echo esc_attr( $event ? gmdate( 'Y-m-d\TH:i', strtotime( $event->start_date ) ) : $defaults['start_date'] ); ?>" required>
+                               value="<?php echo esc_attr( $event ? gmdate( 'Y-m-d\TH:i', strtotime( $event->start_date ) ) : $defaults['start_date'] ); ?>"<?php echo $threecal_month_only ? '' : ' required'; ?>>
                     </div>
 
                     <div class="threecal-field threecal-field-half">
@@ -149,6 +171,7 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( wp_unslash( $_GET['m
                         <?php esc_html_e('All-day event', '3task-calendar'); ?>
                     </label>
                 </div>
+                </div>
 
                 <!-- Repeat -->
                 <?php if ( $event && $event->parent_id ) : ?>
@@ -159,7 +182,7 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( wp_unslash( $_GET['m
                     </p>
                 </div>
                 <?php else : ?>
-                <div class="threecal-field-row">
+                <div class="threecal-field-row threecal-recurrence-fields"<?php echo $threecal_month_only ? ' hidden' : ''; ?>>
                     <div class="threecal-field threecal-field-half">
                         <label for="event_recurrence"><?php esc_html_e( 'Repeat', '3task-calendar' ); ?></label>
                         <select id="event_recurrence" name="event_recurrence">

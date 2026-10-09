@@ -82,7 +82,41 @@
 				}
 			} ) );
 
+			var monthOnly = meta._threecal_precision === 'month';
+
 			if ( show === '1' ) {
+				// Only the month is known, for example "July 2027, date to be announced".
+				items.push( el( C.ToggleControl, {
+					key: 'monthonly',
+					label: __( 'Only the month is known', '3task-calendar' ),
+					checked: monthOnly,
+					__nextHasNoMarginBottom: true,
+					onChange: function ( on ) {
+						editPost( { meta: {
+							_threecal_precision: on ? 'month' : '',
+							_threecal_start: on ? ( date ? date.substr( 0, 7 ) + '-01' : '' ) : date,
+							_threecal_end: on ? '' : end,
+							_threecal_all_day: on ? '1' : meta._threecal_all_day
+						} } );
+					}
+				} ) );
+			}
+
+			if ( show === '1' && monthOnly ) {
+				items.push( el( C.TextControl, {
+					key: 'month',
+					type: 'month',
+					label: __( 'Month', '3task-calendar' ),
+					help: __( 'Visitors see the month and "Date to be announced".', '3task-calendar' ),
+					placeholder: '2027-07',
+					value: date.substr( 0, 7 ),
+					__nextHasNoMarginBottom: true,
+					__next40pxDefaultSize: true,
+					onChange: function ( value ) {
+						set( '_threecal_start', /^\d{4}-\d{2}$/.test( value ) ? value + '-01' : '' );
+					}
+				} ) );
+			} else if ( show === '1' ) {
 				items.push( el( C.TextControl, {
 					key: 'date',
 					type: 'date',

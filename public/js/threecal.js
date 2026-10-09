@@ -94,7 +94,7 @@
             });
 
             // Event click handlers
-            $calendar.on('click', '.threecal-event-dot', function(e) {
+            $calendar.on('click', '.threecal-event-dot, .threecal-tba-event', function(e) {
                 e.preventDefault();
                 var eventId = $(this).data('event-id');
                 self.showEventModal($calendar, eventId);
@@ -224,9 +224,15 @@
 
             $calendar.find('.threecal-load-error').remove();
 
-            // Group events by every day they cover (multi-day events)
+            // Group events by every day they cover (multi-day events).
+            // Events of which only the month is known go to a bar above the grid.
             var eventsByDay = {};
+            var monthOnly = [];
             events.forEach(function(event) {
+                if (event.month_only) {
+                    monthOnly.push(event);
+                    return;
+                }
                 var days = (event.days && event.days.length) ? event.days : [event.day];
                 days.forEach(function(day) {
                     if (!eventsByDay[day]) {
@@ -237,7 +243,8 @@
             });
 
             // Build HTML
-            var html = '<table class="threecal-month-grid"><thead><tr>';
+            var html = self.monthBar(monthOnly);
+            html += '<table class="threecal-month-grid"><thead><tr>';
 
             // Weekday headers
             for (var i = 0; i < 7; i++) {
@@ -316,6 +323,55 @@
         },
 
         /**
+         * Bar above the month grid with the events of which only the month is known
+         */
+        monthBar: function(events) {
+            var self = this;
+            if (!events || !events.length) {
+                return '';
+            }
+            var html = '<div class="threecal-month-tba">';
+            html += '<span class="threecal-month-tba-label">' + self.icon('calendar-question') + self.escapeHtml(threecal_data.i18n.month_tba || '') + '</span>';
+            html += '<span class="threecal-month-tba-events">';
+            events.forEach(function(event) {
+                html += '<a href="#" role="button" aria-haspopup="dialog" class="threecal-tba-event' + (event.cancelled ? ' threecal-is-cancelled' : '') + '" data-event-id="' + parseInt(event.id, 10) + '" style="' + self.evStyle(event.color) + '" title="' + self.escapeHtml((event.cancelled ? self.cancelledText() + ': ' : '') + event.title) + '">';
+                html += self.cancelledBadge(event) + '<span class="threecal-event-title">' + self.escapeHtml(event.title) + '</span>';
+                html += '</a>';
+            });
+            html += '</span></div>';
+            return html;
+        },
+
+        /**
+         * One event row of the list view
+         */
+        listEvent: function(event) {
+            var self = this;
+            var html = '<div class="threecal-list-event' + (event.cancelled ? ' threecal-is-cancelled' : '') + '" data-event-id="' + parseInt(event.id, 10) + '" role="button" tabindex="0" style="' + self.evStyle(event.color) + '">';
+            html += '<div class="threecal-list-event-color"></div>';
+            html += '<div class="threecal-list-event-content">';
+            html += '<div class="threecal-list-event-title">' + self.cancelledBadge(event) + self.escapeHtml(event.title) + '</div>';
+            var metaParts = [];
+            if (event.month_only && event.tba) {
+                metaParts.push(self.escapeHtml(event.tba));
+            } else if (event.time) {
+                metaParts.push(self.escapeHtml(event.time));
+            }
+            if (event.location && event.location.name) {
+                metaParts.push(self.escapeHtml(event.location.name));
+            }
+            if (metaParts.length) {
+                html += '<div class="threecal-list-event-time">' + metaParts.join(' · ') + '</div>';
+            }
+            if (event.postponed) {
+                html += '<div class="threecal-postponed">' + self.escapeHtml(event.postponed) + '</div>';
+            }
+            html += '</div>';
+            html += '</div>';
+            return html;
+        },
+
+        /**
          * Render list view
          */
         renderList: function($calendar, events) {
@@ -325,8 +381,16 @@
 
             $calendar.find('.threecal-load-error').remove();
 
+            // Events of which only the month is known come first, as a group of their own
+            var monthOnly = events.filter(function(event) {
+                return event.month_only;
+            });
+            var dayEvents = events.filter(function(event) {
+                return !event.month_only;
+            });
+
             // Sort events by date
-            events.sort(function(a, b) {
+            dayEvents.sort(function(a, b) {
                 return a.day - b.day;
             });
 
@@ -338,7 +402,19 @@
             } else {
                 var currentDay = null;
 
-                events.forEach(function(event) {
+                if (monthOnly.length) {
+                    html += '<div class="threecal-list-day threecal-list-tba">';
+                    html += '<div class="threecal-list-day-header">';
+                    html += '<span class="threecal-list-day-name">' + self.escapeHtml(threecal_data.i18n.months[data.month - 1] + ' ' + parseInt(data.year, 10)) + '</span>';
+                    html += '<span class="threecal-list-day-date">' + self.escapeHtml(threecal_data.i18n.month_tba || '') + '</span>';
+                    html += '</div>';
+                    monthOnly.forEach(function(event) {
+                        html += self.listEvent(event);
+                    });
+                    html += '</div>';
+                }
+
+                dayEvents.forEach(function(event) {
                     // Group header for each day
                     if (event.day !== currentDay) {
                         if (currentDay !== null) {
@@ -359,25 +435,7 @@
                     }
 
                     // Event item
-                    html += '<div class="threecal-list-event' + (event.cancelled ? ' threecal-is-cancelled' : '') + '" data-event-id="' + parseInt(event.id, 10) + '" role="button" tabindex="0" style="' + self.evStyle(event.color) + '">';
-                    html += '<div class="threecal-list-event-color"></div>';
-                    html += '<div class="threecal-list-event-content">';
-                    html += '<div class="threecal-list-event-title">' + self.cancelledBadge(event) + self.escapeHtml(event.title) + '</div>';
-                    var metaParts = [];
-                    if (event.time) {
-                        metaParts.push(self.escapeHtml(event.time));
-                    }
-                    if (event.location && event.location.name) {
-                        metaParts.push(self.escapeHtml(event.location.name));
-                    }
-                    if (metaParts.length) {
-                        html += '<div class="threecal-list-event-time">' + metaParts.join(' · ') + '</div>';
-                    }
-                    if (event.postponed) {
-                        html += '<div class="threecal-postponed">' + self.escapeHtml(event.postponed) + '</div>';
-                    }
-                    html += '</div>';
-                    html += '</div>';
+                    html += self.listEvent(event);
                 });
 
                 if (currentDay !== null) {
@@ -474,7 +532,10 @@
             html += this.icon('calendar-event');
             html += '<div>' + this.escapeHtml(event.start_date);
             if (event.end_date && event.end_date !== event.start_date) {
-                html += ' – ' + this.escapeHtml(event.end_date);
+                html += ' ' + this.escapeHtml(threecal_data.i18n.range_to) + ' ' + this.escapeHtml(event.end_date);
+            }
+            if (event.month_only && event.tba) {
+                html += ' <span class="threecal-tba">' + this.escapeHtml(event.tba) + '</span>';
             }
             if (event.postponed) {
                 html += '<br><span class="threecal-postponed">' + this.escapeHtml(event.postponed) + '</span>';
@@ -487,7 +548,7 @@
                 html += this.icon('clock');
                 html += '<div>' + this.escapeHtml(event.start_time);
                 if (event.end_time) {
-                    html += ' – ' + this.escapeHtml(event.end_time);
+                    html += ' ' + this.escapeHtml(threecal_data.i18n.range_to) + ' ' + this.escapeHtml(event.end_time);
                 }
                 html += '</div></div>';
             }
@@ -514,22 +575,24 @@
                 html += '<div class="threecal-modal-event-description">' + event.description + '</div>';
             }
 
-            // URL
+            // URL (events of which only the month is known have no calendar file)
             var icsUrl = this.safeUrl(event.ics_url);
-            if (icsUrl) {
+            var url = this.safeUrl(event.url);
+            if (icsUrl || url) {
                 html += '<div class="threecal-modal-actions">';
+            }
+            if (icsUrl) {
                 html += '<a href="' + this.escapeHtml(icsUrl) + '" class="threecal-button threecal-modal-event-ics" download>';
                 html += this.icon('calendar-plus') + ' ' + this.escapeHtml(threecal_data.i18n.add_to_calendar);
                 html += '</a>';
             }
 
-            var url = this.safeUrl(event.url);
             if (url) {
                 html += '<a href="' + this.escapeHtml(url) + '" class="threecal-button threecal-button-ghost threecal-modal-event-url" target="_blank" rel="noopener">';
                 html += this.icon('external-link') + ' ' + this.escapeHtml(threecal_data.i18n.more_info);
                 html += '</a>';
             }
-            if (icsUrl) {
+            if (icsUrl || url) {
                 html += '</div>';
             }
 

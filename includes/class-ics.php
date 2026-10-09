@@ -88,7 +88,8 @@ class ThreeCal_ICS {
 
 		if ( $event_id ) {
 			$event = ThreeCal_Event::get( $event_id );
-			if ( ! $event || ! in_array( $event->status, array( 'published', 'cancelled' ), true ) ) {
+			// An event of which only the month is known has no date for a calendar app.
+			if ( ! $event || ! in_array( $event->status, array( 'published', 'cancelled' ), true ) || $event->is_month_only() ) {
 				status_header( 404 );
 				nocache_headers();
 				exit;
@@ -111,7 +112,8 @@ class ThreeCal_ICS {
 			$events = array_filter(
 				$events,
 				function ( $event ) {
-					return in_array( $event->status, array( 'published', 'cancelled' ), true );
+					// Events of which only the month is known stay out of the feed.
+					return in_array( $event->status, array( 'published', 'cancelled' ), true ) && ! $event->is_month_only();
 				}
 			);
 			$this->send( $this->build_calendar( $events, get_bloginfo( 'name' ) ), 'calendar', 'inline' );

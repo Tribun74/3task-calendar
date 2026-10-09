@@ -47,6 +47,13 @@ class ThreeCal_Post_Dates {
 	const META_ALL_DAY = '_threecal_all_day';
 
 	/**
+	 * Post meta: 'month' when only the month of the date is known, '' otherwise.
+	 *
+	 * @since 1.6.0
+	 */
+	const META_PRECISION = '_threecal_precision';
+
+	/**
 	 * Post meta: ID of the linked calendar event.
 	 */
 	const META_EVENT = '_threecal_event_id';
@@ -340,9 +347,10 @@ class ThreeCal_Post_Dates {
 				return null;
 			}
 			return array(
-				'start'   => $parsed[1] ? $parsed[0] : substr( $parsed[0], 0, 10 ) . ' 00:00:00',
-				'end'     => '',
-				'all_day' => ! $parsed[1],
+				'start'     => $parsed[1] ? $parsed[0] : substr( $parsed[0], 0, 10 ) . ' 00:00:00',
+				'end'       => '',
+				'all_day'   => ! $parsed[1],
+				'precision' => 'day',
 			);
 		}
 
@@ -354,6 +362,16 @@ class ThreeCal_Post_Dates {
 		$start   = self::parse_date( get_post_meta( $post->ID, self::META_START, true ) );
 		if ( ! $start ) {
 			return null;
+		}
+
+		// Only the month is known: first day of the month, all day, no end.
+		if ( 'month' === (string) get_post_meta( $post->ID, self::META_PRECISION, true ) ) {
+			return array(
+				'start'     => substr( $start[0], 0, 7 ) . '-01 00:00:00',
+				'end'       => '',
+				'all_day'   => true,
+				'precision' => 'month',
+			);
 		}
 		$start_value = $all_day ? substr( $start[0], 0, 10 ) . ' 00:00:00' : $start[0];
 
@@ -367,9 +385,10 @@ class ThreeCal_Post_Dates {
 		}
 
 		return array(
-			'start'   => $start_value,
-			'end'     => $end_value,
-			'all_day' => $all_day,
+			'start'     => $start_value,
+			'end'       => $end_value,
+			'all_day'   => $all_day,
+			'precision' => 'day',
 		);
 	}
 
@@ -420,6 +439,8 @@ class ThreeCal_Post_Dates {
 		$live_before = ! $is_new && 'published' === $event->status;
 		$old_day     = substr( (string) $event->start_date, 0, 10 );
 		$new_day     = substr( $values['start'], 0, 10 );
+		$was_month   = ! $is_new && $event->is_month_only();
+		$now_month   = isset( $values['precision'] ) && 'month' === $values['precision'];
 
 		$event->title           = html_entity_decode( wp_strip_all_tags( $post->post_title ), ENT_QUOTES, 'UTF-8' );
 		$event->description     = self::excerpt( $post );
@@ -435,12 +456,15 @@ class ThreeCal_Post_Dates {
 		$event->parent_id       = 0;
 
 		// A published date that moves is shown as postponed, until it moves back.
-		if ( $live_before && 'published' === $event->status && $old_day && $old_day !== $new_day ) {
+		// A month that gets its day ("July 2027" becomes "July 15, 2027") did not
+		// move, and neither does a date that turns into a month: no "postponed" then.
+		if ( $live_before && 'published' === $event->status && $old_day && $old_day !== $new_day && ! $was_month && ! $now_month ) {
 			$event->set_setting( 'previous_start', $old_day );
 		}
-		if ( $new_day === (string) $event->get_setting( 'previous_start', '' ) ) {
+		if ( $was_month || $new_day === (string) $event->get_setting( 'previous_start', '' ) ) {
 			$event->set_setting( 'previous_start', '' );
 		}
+		$event->set_date_precision( $now_month ? 'month' : 'day' );
 		$event->set_setting( 'post_id', $post_id );
 		$event->set_setting( 'post_type', $post->post_type );
 
@@ -526,7 +550,7 @@ class ThreeCal_Post_Dates {
 		if ( null === self::$watch ) {
 			self::$watch = array();
 			foreach ( self::enabled_types() as $settings ) {
-				foreach ( array( self::META_SHOW, self::META_START, self::META_END, self::META_ALL_DAY, '_thumbnail_id', $settings['source'], isset( $settings['skip'] ) ? $settings['skip'] : '' ) as $key ) {
+				foreach ( array( self::META_SHOW, self::META_START, self::META_END, self::META_ALL_DAY, self::META_PRECISION, '_thumbnail_id', $settings['source'], isset( $settings['skip'] ) ? $settings['skip'] : '' ) as $key ) {
 					if ( '' !== $key ) {
 						self::$watch[ $key ] = true;
 					}
@@ -577,7 +601,7 @@ class ThreeCal_Post_Dates {
 	 * @return string Plain text.
 	 */
 	public static function postponed_text( $event ) {
-		if ( ! $event || ! self::settings()['postponed'] ) {
+		if ( ! $event || ! self::settings()['postponed'] || $event->is_month_only() ) {
 			return '';
 		}
 		$previous = (string) $event->get_setting( 'previous_start', '' );
@@ -600,7 +624,7 @@ class ThreeCal_Post_Dates {
 			// The block editor saves post meta only for types with custom fields support.
 			add_post_type_support( $post_type, 'custom-fields' );
 
-			foreach ( array( self::META_SHOW, self::META_START, self::META_END, self::META_ALL_DAY ) as $key ) {
+			foreach ( array( self::META_SHOW, self::META_START, self::META_END, self::META_ALL_DAY, self::META_PRECISION ) as $key ) {
 				register_post_meta(
 					$post_type,
 					$key,
@@ -642,6 +666,9 @@ class ThreeCal_Post_Dates {
 		$value = is_scalar( $value ) ? trim( (string) $value ) : '';
 		if ( self::META_SHOW === $meta_key || self::META_ALL_DAY === $meta_key ) {
 			return in_array( $value, array( '0', '1' ), true ) ? $value : '';
+		}
+		if ( self::META_PRECISION === $meta_key ) {
+			return 'month' === $value ? 'month' : '';
 		}
 		$parsed = self::parse_date( $value );
 		if ( ! $parsed ) {
@@ -752,9 +779,16 @@ class ThreeCal_Post_Dates {
 		$start   = (string) get_post_meta( $post->ID, self::META_START, true );
 		$end     = (string) get_post_meta( $post->ID, self::META_END, true );
 		$all_day = '0' !== (string) get_post_meta( $post->ID, self::META_ALL_DAY, true );
+		$month   = 'month' === (string) get_post_meta( $post->ID, self::META_PRECISION, true );
 		?>
 		<input type="hidden" name="threecal_mode" value="own">
 		<p><label><input type="checkbox" name="threecal_show" value="1" <?php checked( '1', $show ); ?>> <?php esc_html_e( 'Show in the calendar', '3task-calendar' ); ?></label></p>
+		<p><label><input type="checkbox" name="threecal_month_only" value="1" <?php checked( $month ); ?>> <?php esc_html_e( 'Only the month is known', '3task-calendar' ); ?></label></p>
+		<p>
+			<label for="threecal_start_month"><?php esc_html_e( 'Month', '3task-calendar' ); ?></label><br>
+			<input type="month" id="threecal_start_month" name="threecal_start_month" value="<?php echo esc_attr( $month ? substr( $start, 0, 7 ) : '' ); ?>" placeholder="2027-07">
+			<br><span class="description"><?php esc_html_e( 'Used instead of the date when only the month is known. Visitors see the month and "Date to be announced".', '3task-calendar' ); ?></span>
+		</p>
 		<p>
 			<label for="threecal_start_date"><?php esc_html_e( 'Date', '3task-calendar' ); ?></label><br>
 			<input type="date" id="threecal_start_date" name="threecal_start_date" value="<?php echo esc_attr( substr( $start, 0, 10 ) ); ?>">
@@ -790,6 +824,17 @@ class ThreeCal_Post_Dates {
 		}
 
 		$all_day = ! empty( $_POST['threecal_all_day'] );
+		$month   = isset( $_POST['threecal_start_month'] ) ? sanitize_text_field( wp_unslash( $_POST['threecal_start_month'] ) ) : '';
+		if ( ! empty( $_POST['threecal_month_only'] ) && preg_match( '/^(\d{4})-(\d{2})$/', $month, $parts ) && (int) $parts[2] >= 1 && (int) $parts[2] <= 12 ) {
+			// Only the month is known: stored as its first day, the precision says the rest.
+			update_post_meta( $post_id, self::META_SHOW, empty( $_POST['threecal_show'] ) ? '0' : '1' );
+			update_post_meta( $post_id, self::META_PRECISION, 'month' );
+			update_post_meta( $post_id, self::META_ALL_DAY, '1' );
+			update_post_meta( $post_id, self::META_START, $month . '-01' );
+			update_post_meta( $post_id, self::META_END, '' );
+			return;
+		}
+		update_post_meta( $post_id, self::META_PRECISION, '' );
 		$date    = isset( $_POST['threecal_start_date'] ) ? sanitize_text_field( wp_unslash( $_POST['threecal_start_date'] ) ) : '';
 		$time    = isset( $_POST['threecal_start_time'] ) ? sanitize_text_field( wp_unslash( $_POST['threecal_start_time'] ) ) : '';
 		$e_date  = isset( $_POST['threecal_end_date'] ) ? sanitize_text_field( wp_unslash( $_POST['threecal_end_date'] ) ) : '';
@@ -854,6 +899,10 @@ class ThreeCal_Post_Dates {
 		}
 		$event = ThreeCal_Event::get( (int) get_post_meta( $post_id, self::META_EVENT, true ) );
 		$time  = strtotime( $sort );
+		if ( $event && $event->is_month_only() ) {
+			echo esc_html( $event->month_label() ) . '<br><em>' . esc_html( ThreeCal_Event::tba_text() ) . '</em>';
+			return;
+		}
 		echo esc_html( date_i18n( threecal_date_format(), $time ) );
 		if ( $event && ! $event->all_day ) {
 			echo '<br>' . esc_html( date_i18n( threecal_time_format(), $time ) );
@@ -1013,6 +1062,10 @@ class ThreeCal_Post_Dates {
 		if ( ! $event->all_day ) {
 			$when .= ' · ' . date_i18n( threecal_time_format(), $start );
 		}
+		$month_only = $event->is_month_only();
+		if ( $month_only ) {
+			$when = $event->month_label();
+		}
 		$postponed = self::postponed_text( $event );
 		$cancelled = 'cancelled' === $event->status;
 
@@ -1022,12 +1075,12 @@ class ThreeCal_Post_Dates {
 			<span class="threecal-post-date-icon" aria-hidden="true"><?php ThreeCal_Icons::render( 'calendar-event', 26 ); ?></span>
 			<span class="threecal-post-date-text">
 				<span class="threecal-post-date-label"><?php echo esc_html( self::label( $settings ) ); ?></span>
-				<span class="threecal-post-date-value"><?php echo ThreeCal_Calendar_Renderer::cancelled_badge( $event ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in cancelled_badge(). ?><?php echo esc_html( $when ); ?></span>
+				<span class="threecal-post-date-value"><?php echo ThreeCal_Calendar_Renderer::cancelled_badge( $event ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in cancelled_badge(). ?><?php echo esc_html( $when ); ?><?php echo $month_only ? ' ' . ThreeCal_Calendar_Renderer::tba_note( $event ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in tba_note(). ?></span>
 				<?php if ( $postponed ) : ?>
 				<span class="threecal-postponed"><?php echo esc_html( $postponed ); ?></span>
 				<?php endif; ?>
 			</span>
-			<?php if ( ! $cancelled ) : ?>
+			<?php if ( ! $cancelled && ! $month_only ) : ?>
 			<a class="threecal-post-date-ics" href="<?php echo esc_url( ThreeCal_ICS::event_url( $event->id ) ); ?>" download>
 				<?php ThreeCal_Icons::render( 'calendar-plus', 18 ); ?>
 				<span><?php esc_html_e( 'Add to my calendar', '3task-calendar' ); ?></span>

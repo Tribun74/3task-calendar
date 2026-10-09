@@ -25,6 +25,20 @@ class ThreeCal_Calendar_Renderer {
     }
 
     /**
+     * "Date to be announced" note for an event of which only the month is known.
+     *
+     * @since 1.6.0
+     * @param ThreeCal_Event $event Event.
+     * @return string Escaped HTML, empty for events with a known day.
+     */
+    public static function tba_note($event) {
+        if (!$event || !$event->is_month_only()) {
+            return '';
+        }
+        return '<span class="threecal-tba">' . esc_html(ThreeCal_Event::tba_text()) . '</span>';
+    }
+
+    /**
      * Settings
      */
     private $settings;
@@ -238,7 +252,16 @@ class ThreeCal_Calendar_Renderer {
 
         // Group events by every day they cover (multi-day events appear on each day)
         $events_by_day = array();
+        $month_only = array();
         foreach ($events as $event) {
+            // Only the month is known: shown in a bar above the grid, not on the 1st.
+            if ($event->is_month_only()) {
+                $month_only[] = array(
+                    'event' => $event,
+                    'color' => ThreeCal_Themes::event_color($event, isset($categories[$event->id]) ? $categories[$event->id] : array()),
+                );
+                continue;
+            }
             foreach ($event->get_days_in_month($month, $year) as $day) {
                 $events_by_day[$day][] = array(
                     'event' => $event,
@@ -255,6 +278,25 @@ class ThreeCal_Calendar_Renderer {
 
         ob_start();
         ?>
+        <?php if (!empty($month_only)) : ?>
+        <div class="threecal-month-tba">
+            <span class="threecal-month-tba-label"><?php ThreeCal_Icons::render('calendar-question', 16); ?><?php esc_html_e('This month, date to be announced', '3task-calendar'); ?></span>
+            <span class="threecal-month-tba-events">
+                <?php foreach ($month_only as $item) :
+                    $event = $item['event'];
+                    ?>
+                <a href="#" role="button" aria-haspopup="dialog"
+                   class="threecal-tba-event<?php echo 'cancelled' === $event->status ? ' threecal-is-cancelled' : ''; ?>"
+                   data-event-id="<?php echo esc_attr($event->id); ?>"
+                   style="<?php echo esc_attr(ThreeCal_Themes::event_style($item['color'])); ?>"
+                   title="<?php echo esc_attr(('cancelled' === $event->status ? __('Cancelled', '3task-calendar') . ': ' : '') . $event->title); ?>">
+                    <?php echo self::cancelled_badge($event); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in cancelled_badge(). ?>
+                    <span class="threecal-event-title"><?php echo esc_html($event->title); ?></span>
+                </a>
+                <?php endforeach; ?>
+            </span>
+        </div>
+        <?php endif; ?>
         <table class="threecal-month-grid">
             <thead>
                 <tr>
@@ -386,9 +428,14 @@ class ThreeCal_Calendar_Renderer {
     public function render_poster_card($event, $categories = array()) {
         $color = ThreeCal_Themes::event_color($event, $categories);
         $start = strtotime($event->start_date);
-        $when = date_i18n('D', $start) . ', ' . date_i18n($this->date_format(), $start);
-        if (!$event->all_day) {
-            $when .= ' · ' . date_i18n($this->time_format(), $start);
+        $month_only = $event->is_month_only();
+        if ($month_only) {
+            $when = $event->month_label();
+        } else {
+            $when = date_i18n('D', $start) . ', ' . date_i18n($this->date_format(), $start);
+            if (!$event->all_day) {
+                $when .= ' · ' . date_i18n($this->time_format(), $start);
+            }
         }
         $postponed = ThreeCal_Post_Dates::postponed_text($event);
         $cancelled = 'cancelled' === $event->status;
@@ -407,10 +454,17 @@ class ThreeCal_Calendar_Renderer {
                 <?php else : ?>
                     <span class="threecal-poster-placeholder"><?php ThreeCal_Icons::render('calendar-event', 44); ?></span>
                 <?php endif; ?>
+                <?php if ($month_only) : ?>
+                <span class="threecal-poster-date threecal-poster-date-tba">
+                    <span class="threecal-poster-day"><?php echo esc_html(date_i18n('M', $start)); ?></span>
+                    <span class="threecal-poster-month"><?php echo esc_html(date_i18n('Y', $start)); ?></span>
+                </span>
+                <?php else : ?>
                 <span class="threecal-poster-date">
                     <span class="threecal-poster-day"><?php echo esc_html(date_i18n('j', $start)); ?></span>
                     <span class="threecal-poster-month"><?php echo esc_html(date_i18n('M', $start)); ?></span>
                 </span>
+                <?php endif; ?>
             <?php echo $link ? '</a>' : '</div>'; ?>
 
             <div class="threecal-poster-body">
@@ -422,11 +476,11 @@ class ThreeCal_Calendar_Renderer {
                     <?php echo esc_html($event->title); ?>
                     <?php endif; ?>
                 </h3>
-                <p class="threecal-poster-when"><?php echo esc_html($when); ?></p>
+                <p class="threecal-poster-when"><?php echo esc_html($when); ?><?php echo $month_only ? ' ' . self::tba_note($event) : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in tba_note(). ?></p>
                 <?php if ($postponed) : ?>
                 <p class="threecal-postponed"><?php ThreeCal_Icons::render('clock-exclamation', 15); ?><?php echo esc_html($postponed); ?></p>
                 <?php endif; ?>
-                <?php if (!$cancelled) : ?>
+                <?php if (!$cancelled && !$month_only) : ?>
                 <a class="threecal-event-ics" href="<?php echo esc_url(ThreeCal_ICS::event_url($event->id)); ?>" download>
                     <?php ThreeCal_Icons::render('calendar-plus', 16); ?>
                     <?php esc_html_e('Add to my calendar', '3task-calendar'); ?>
@@ -450,15 +504,23 @@ class ThreeCal_Calendar_Renderer {
         $date_format = $this->date_format();
         $time_format = $this->time_format();
         $start = strtotime($event->start_date);
+        $month_only = $event->is_month_only();
 
         ob_start();
         ?>
-        <article class="threecal-event-card<?php echo 'cancelled' === $event->status ? ' threecal-is-cancelled' : ''; ?>" data-event-id="<?php echo esc_attr($event->id); ?>" style="<?php echo esc_attr(ThreeCal_Themes::event_style($color)); ?>">
+        <article class="threecal-event-card<?php echo 'cancelled' === $event->status ? ' threecal-is-cancelled' : ''; ?><?php echo $month_only ? ' threecal-is-tba' : ''; ?>" data-event-id="<?php echo esc_attr($event->id); ?>" style="<?php echo esc_attr(ThreeCal_Themes::event_style($color)); ?>">
+            <?php if ($month_only) : ?>
+            <div class="threecal-date-badge threecal-date-badge-tba" aria-hidden="true">
+                <span class="threecal-date-badge-month"><?php echo esc_html(date_i18n('M', $start)); ?></span>
+                <span class="threecal-date-badge-day"><?php echo esc_html(date_i18n('Y', $start)); ?></span>
+            </div>
+            <?php else : ?>
             <div class="threecal-date-badge" aria-hidden="true">
                 <span class="threecal-date-badge-month"><?php echo esc_html(date_i18n('M', $start)); ?></span>
                 <span class="threecal-date-badge-day"><?php echo esc_html(date_i18n('j', $start)); ?></span>
                 <span class="threecal-date-badge-weekday"><?php echo esc_html(date_i18n('D', $start)); ?></span>
             </div>
+            <?php endif; ?>
 
             <div class="threecal-event-content">
                 <?php if ($event->featured_image && 'compact' !== $view) : ?>
@@ -489,25 +551,29 @@ class ThreeCal_Calendar_Renderer {
                         <?php ThreeCal_Icons::render('clock', 16); ?>
                         <span>
                         <?php
-                        echo esc_html(date_i18n($date_format, $start));
-                        if (!$event->all_day) {
-                            echo ' · ' . esc_html(date_i18n($time_format, $start));
-                        }
-                        if ($event->end_date && $event->end_date !== $event->start_date) {
-                            $end = strtotime($event->end_date);
-                            echo ' – ';
-                            if (gmdate('Y-m-d', $start) !== gmdate('Y-m-d', $end)) {
-                                echo esc_html(date_i18n($date_format, $end));
+                        if ($month_only) {
+                            echo esc_html($event->month_label()) . ' ' . self::tba_note($event); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in tba_note().
+                        } else {
+                            echo esc_html(date_i18n($date_format, $start));
+                            if (!$event->all_day) {
+                                echo ' · ' . esc_html(date_i18n($time_format, $start));
+                            }
+                            if ($event->end_date && $event->end_date !== $event->start_date) {
+                                $end = strtotime($event->end_date);
+                                echo ' ' . esc_html_x('to', 'between two dates or times', '3task-calendar') . ' ';
+                                if (gmdate('Y-m-d', $start) !== gmdate('Y-m-d', $end)) {
+                                    echo esc_html(date_i18n($date_format, $end));
+                                    if (!$event->all_day) {
+                                        echo ' · ';
+                                    }
+                                }
                                 if (!$event->all_day) {
-                                    echo ' · ';
+                                    echo esc_html(date_i18n($time_format, $end));
                                 }
                             }
-                            if (!$event->all_day) {
-                                echo esc_html(date_i18n($time_format, $end));
+                            if ($event->all_day) {
+                                echo ' · ' . esc_html__('All day', '3task-calendar');
                             }
-                        }
-                        if ($event->all_day) {
-                            echo ' · ' . esc_html__('All day', '3task-calendar');
                         }
                         ?>
                         </span>
@@ -516,7 +582,7 @@ class ThreeCal_Calendar_Renderer {
                     <?php if ($location) : ?>
                     <span class="threecal-event-location">
                         <?php ThreeCal_Icons::render('map-pin', 16); ?>
-                        <span><?php echo esc_html($location->name); ?><?php if ($location->city) : ?>, <?php echo esc_html($location->city); ?><?php endif; ?></span>
+                        <span><?php echo esc_html($location->name); ?><?php if ($location->city && $location->city !== $location->name) : ?>, <?php echo esc_html($location->city); ?><?php endif; ?></span>
                     </span>
                     <?php endif; ?>
                 </div>
@@ -530,10 +596,12 @@ class ThreeCal_Calendar_Renderer {
                 <p class="threecal-event-excerpt"><?php echo esc_html( wp_trim_words( wp_strip_all_tags( $event->description ), 24 ) ); ?></p>
                 <?php endif; ?>
 
+                <?php if ( ! $month_only ) : ?>
                 <a class="threecal-event-ics" href="<?php echo esc_url( ThreeCal_ICS::event_url( $event->id ) ); ?>" download>
                     <?php ThreeCal_Icons::render('calendar-plus', 16); ?>
                     <?php esc_html_e( 'Add to my calendar', '3task-calendar' ); ?>
                 </a>
+                <?php endif; ?>
             </div>
         </article>
         <?php
@@ -587,9 +655,13 @@ class ThreeCal_Calendar_Renderer {
                     <div>
                         <strong><?php esc_html_e('Date', '3task-calendar'); ?></strong><br>
                         <?php
-                        echo esc_html(date_i18n($date_format, strtotime($event->start_date)));
-                        if ($event->end_date && gmdate('Y-m-d', strtotime($event->start_date)) !== gmdate('Y-m-d', strtotime($event->end_date))) {
-                            echo ' – ' . esc_html(date_i18n($date_format, strtotime($event->end_date)));
+                        if ($event->is_month_only()) {
+                            echo esc_html($event->month_label()) . ' ' . self::tba_note($event); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in tba_note().
+                        } else {
+                            echo esc_html(date_i18n($date_format, strtotime($event->start_date)));
+                            if ($event->end_date && gmdate('Y-m-d', strtotime($event->start_date)) !== gmdate('Y-m-d', strtotime($event->end_date))) {
+                                echo ' ' . esc_html_x('to', 'between two dates or times', '3task-calendar') . ' ' . esc_html(date_i18n($date_format, strtotime($event->end_date)));
+                            }
                         }
                         ?>
                     </div>
@@ -603,7 +675,7 @@ class ThreeCal_Calendar_Renderer {
                         <?php
                         echo esc_html(date_i18n($time_format, strtotime($event->start_date)));
                         if ($event->end_date) {
-                            echo ' – ' . esc_html(date_i18n($time_format, strtotime($event->end_date)));
+                            echo ' ' . esc_html_x('to', 'between two dates or times', '3task-calendar') . ' ' . esc_html(date_i18n($time_format, strtotime($event->end_date)));
                         }
                         ?>
                     </div>
@@ -631,10 +703,12 @@ class ThreeCal_Calendar_Renderer {
             <?php endif; ?>
 
             <div class="threecal-event-actions">
+                <?php if (!$event->is_month_only()) : ?>
                 <a class="threecal-button" href="<?php echo esc_url(ThreeCal_ICS::event_url($event->id)); ?>" download>
                     <?php ThreeCal_Icons::render('calendar-plus', 18); ?>
                     <?php esc_html_e('Add to my calendar', '3task-calendar'); ?>
                 </a>
+                <?php endif; ?>
                 <?php if ($event->url) : ?>
                 <a class="threecal-button threecal-button-ghost" href="<?php echo esc_url($event->url); ?>" target="_blank" rel="noopener">
                     <?php ThreeCal_Icons::render('external-link', 18); ?>
@@ -679,11 +753,11 @@ class ThreeCal_Calendar_Renderer {
                 $color = ThreeCal_Themes::event_color($event, isset($categories[$event->id]) ? $categories[$event->id] : array());
                 $start = strtotime($event->start_date);
             ?>
-            <li class="threecal-upcoming-item<?php echo 'cancelled' === $event->status ? ' threecal-is-cancelled' : ''; ?>" style="<?php echo esc_attr(ThreeCal_Themes::event_style($color)); ?>">
+            <li class="threecal-upcoming-item<?php echo 'cancelled' === $event->status ? ' threecal-is-cancelled' : ''; ?><?php echo $event->is_month_only() ? ' threecal-is-tba' : ''; ?>" style="<?php echo esc_attr(ThreeCal_Themes::event_style($color)); ?>">
                 <?php if ($args['show_date']) : ?>
-                <div class="threecal-date-badge threecal-date-badge-small" aria-hidden="true">
+                <div class="threecal-date-badge threecal-date-badge-small<?php echo $event->is_month_only() ? ' threecal-date-badge-tba' : ''; ?>" aria-hidden="true">
                     <span class="threecal-date-badge-month"><?php echo esc_html(date_i18n('M', $start)); ?></span>
-                    <span class="threecal-date-badge-day"><?php echo esc_html(date_i18n('j', $start)); ?></span>
+                    <span class="threecal-date-badge-day"><?php echo esc_html(date_i18n($event->is_month_only() ? 'Y' : 'j', $start)); ?></span>
                 </div>
                 <?php endif; ?>
                 <div class="threecal-upcoming-content">
@@ -691,7 +765,11 @@ class ThreeCal_Calendar_Renderer {
 
                     <?php if ($args['show_date']) : ?>
                     <span class="threecal-upcoming-date">
+                        <?php if ($event->is_month_only()) : ?>
+                        <?php echo esc_html($event->month_label()) . ' ' . self::tba_note($event); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in tba_note(). ?>
+                        <?php else : ?>
                         <?php echo esc_html(date_i18n($date_format, $start)); ?>
+                        <?php endif; ?>
                         <?php if ($args['show_time'] && !$event->all_day) : ?>
                         <span class="threecal-upcoming-time"> · <?php echo esc_html(date_i18n($time_format, $start)); ?></span>
                         <?php endif; ?>
@@ -774,6 +852,10 @@ class ThreeCal_Calendar_Renderer {
         // Group events by every day they cover, with event data for the popup
         $events_data_by_day = array();
         foreach ($events as $event) {
+            // The mini calendar has no room for dates without a day.
+            if ($event->is_month_only()) {
+                continue;
+            }
             $color = ThreeCal_Themes::event_color($event, isset($categories[$event->id]) ? $categories[$event->id] : array());
             $event_time = $event->all_day ? __('All day', '3task-calendar') : date_i18n($time_format, strtotime($event->start_date));
             foreach ($event->get_days_in_month($month, $year) as $day) {

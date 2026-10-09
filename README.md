@@ -17,6 +17,8 @@ An event calendar for clubs, practices, schools and small businesses that want t
 - **Date box in posts:** block "Date of this post" or `[threecal_post_date]` with an "Add to my calendar" button
 - **Poster view:** upcoming dates as tiles with the post image
 - **Postponed and cancelled dates:** "Postponed, previously …", cancelled events stay visible and crossed out
+- **Only the month known:** festivals and other dates without a fixed day show "July 2027, date to be announced" and stay out of the iCal feed and the event schema until the day is set
+- **CSV import:** preview before saving, updates instead of duplicates via `import_key`, also as WP-CLI command `wp threecal import`
 - **Recurring events:** daily, weekly, every two weeks, monthly or yearly; single dates can be cancelled or removed
 - **iCal:** "Add to my calendar" for every event and a subscription feed for Google Calendar, Apple Calendar, Outlook and Thunderbird
 - **Views:** month, list, cards, compact, poster and a mini calendar for sidebars
@@ -49,7 +51,7 @@ Requires WordPress 5.8 and PHP 7.4.
 
 ## Changelog
 
-The full changelog is in [readme.txt](readme.txt). Latest release: **1.5.0** (2 October 2026) with lists for a whole month, "now showing" and a leave-out field for dates from posts.
+The full changelog is in [readme.txt](readme.txt). Latest release: **1.6.0** (9 October 2026) with dates where only the month is known and a CSV import with preview and WP-CLI command.
 
 ## Pro add-on
 

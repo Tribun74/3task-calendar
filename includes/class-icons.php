@@ -52,6 +52,8 @@ class ThreeCal_Icons {
 			'book'             => array( 'M3 19a9 9 0 0 1 9 0a9 9 0 0 1 9 0', 'M3 6a9 9 0 0 1 9 0a9 9 0 0 1 9 0', 'M3 6l0 13', 'M12 6l0 13', 'M21 6l0 13' ),
 			'message-circle'   => array( 'M3 20l1.3 -3.9c-2.324 -3.437 -1.426 -7.872 2.1 -10.374c3.526 -2.501 8.59 -2.296 11.845 .48c3.255 2.777 3.695 7.266 1.029 10.501c-2.666 3.235 -7.615 4.215 -11.574 2.293l-4.7 1' ),
 			'download'         => array( 'M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2', 'M7 11l5 5l5 -5', 'M12 4l0 12' ),
+			'file-import'      => array( 'M14 3v4a1 1 0 0 0 1 1h4', 'M5 13v-8a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2h-5.5m-9.5 -2h7m-3 -3l3 3l-3 3' ),
+			'calendar-question' => array( 'M15 21h-9a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4', 'M16 3v4', 'M8 3v4', 'M4 11h16', 'M19 22v.01', 'M19 19a2.003 2.003 0 0 0 .914 -3.782a1.98 1.98 0 0 0 -2.414 .483' ),
 		);
 	}
 
@@ -117,7 +119,7 @@ class ThreeCal_Icons {
 	 * @return array
 	 */
 	public static function for_js() {
-		$names = array( 'calendar-event', 'clock', 'map-pin', 'route', 'calendar-plus', 'external-link' );
+		$names = array( 'calendar-event', 'clock', 'map-pin', 'route', 'calendar-plus', 'external-link', 'calendar-question' );
 		$icons = array();
 		foreach ( $names as $name ) {
 			$icons[ $name ] = self::svg( $name, 18 );

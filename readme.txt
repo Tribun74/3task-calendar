@@ -4,7 +4,7 @@ Tags: event calendar, recurring events, ical, gdpr, events
 Requires at least: 5.8
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.5.1
+Stable tag: 1.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,6 +26,8 @@ Visitors can add a single event to their own calendar or subscribe to the whole 
 * **Date Box in Posts**: Block "Date of this post" or `[threecal_post_date]` shows the date with an "Add to my calendar" button, also automatically at the start or end of a post
 * **Poster View**: Upcoming dates as large tiles with the post image, for example "This week at the cinema"
 * **Postponed Dates**: When a published date moves, the calendar shows "Postponed, previously …" and subscribers get the new date
+* **Only the Month Known**: For festivals and other dates of which only the month is set, the calendar shows "July 2027, date to be announced"; the month view lists them in a bar above the grid. Such dates stay out of the iCal feed and the event schema until the day is known
+* **CSV Import**: Import events from a spreadsheet. A preview shows what happens before anything is saved, and importing the same file again updates the events instead of creating duplicates. Also available as WP-CLI command `wp threecal import`
 * **Recurring Events**: Daily, weekly, every two weeks, monthly or yearly, with an end date; single dates can be cancelled, removed or changed on their own
 * **Cancelled Events**: A cancelled date stays visible, crossed out, so nobody turns up in vain; subscribers and search engines get the cancellation too
 * **iCal Export and Subscription**: "Add to my calendar" for every event and a subscription feed (all events or one category) for Google Calendar, Apple Calendar, Outlook and Thunderbird
@@ -127,9 +129,31 @@ Yes. Under 3task Calendar > Posts, switch on the date for posts, pages or a cust
 
 No. Choose the field under "Date comes from". The list shows every field that holds dates, how many posts use it and an example value, so the right one is easy to spot. "Apply to existing posts" puts all of them into the calendar in one go. Dates like 2026-10-01, 20261001 (ACF), 01.10.2026 and Unix timestamps are read, and changes made by imports or other plugins are picked up automatically.
 
+= What if only the month of an event is known? =
+
+Choose "Only the month is known" when editing the event and pick the month. Visitors see "July 2027" with the note "Date to be announced". In the month view the event appears in a bar above the grid instead of on the 1st. It is left out of the iCal feed and gets no event schema, because Google requires a concrete date. Once the day is known, switch back to "The date is known"; this is not shown as "Postponed". The same option exists for dates from posts with their own date field.
+
+= How do I import events from a CSV file? =
+
+Go to 3task Calendar > Import, upload the file and check the preview. Nothing is saved before you click "Run import". The file is UTF-8 (with or without byte order mark), the separator ; or , is found automatically, at most 2 MB. A sample file can be downloaded on the same page.
+
+Columns (first line, upper or lower case does not matter):
+
+* `import_key`: your own unique key; a row with an existing key updates that event, so a second import creates no duplicates
+* `title` (required)
+* `start` (required): `2027-07-10`, `2027-07-10 20:00` or `2027-07` when only the month is known
+* `end`: `2027-07-12` or `2027-07-12 23:00`
+* `all_day`: 1 or 0
+* `url`, `description`
+* `category`: name, several separated by `|`; missing categories are created
+* `location_name`, `address`, `postal_code`, `city`, `country` (two letters, e.g. DE): a location with the same name and city is used again
+* `status`: draft, publish or cancelled; overrides the status chosen on the import page
+
+When an event is updated, it keeps its status and the columns that are not in the file. On the command line: `wp threecal import events.csv --dry-run` checks the file, `wp threecal import events.csv --status=publish` imports it.
+
 = Why do some events not appear in the event schema? =
 
-Google only accepts events that take place at a real location, and it does not allow office hours or release dates as events. Events without a location get no markup, and every category can be excluded with "Not an event for search engines".
+Google only accepts events that take place at a real location on a concrete date, and it does not allow office hours or release dates as events. Events without a location or with only the month known get no markup, and every category can be excluded with "Not an event for search engines".
 
 = How do visitors subscribe to the calendar? =
 
@@ -165,6 +189,17 @@ Please use the [WordPress.org support forum](https://wordpress.org/support/plugi
 10. Poster view with the post images, and the date box with "Add to my calendar" in a post
 
 == Changelog ==
+
+= 1.6.0 =
+* NEW: "Only the month is known" for events such as festivals: lists, posters, upcoming events, the single event and the popup show "July 2027, date to be announced"; the month view shows them in a bar above the grid, the mini calendar leaves them out
+* NEW: Events with only the month known get no event schema and stay out of the iCal feed and the .ics download until the day is known; they count as upcoming until their month is over
+* NEW: Dates from posts with their own date field can be set to "Only the month is known" as well; when the day becomes known, no "Postponed" note is shown
+* NEW: CSV import under 3task Calendar > Import with a preview before saving, sample file, automatic separator detection and updates by import_key instead of duplicates; categories and locations are created or reused
+* NEW: WP-CLI command `wp threecal import <file.csv> [--dry-run] [--status=draft|publish]`
+* NEW: The REST API and the calendar data contain datePrecision (day or month)
+* IMPROVED: Event schema skips month-only events without losing one of the five places for events with a date
+* IMPROVED: Date and time ranges read "to" instead of a dash, a location named like its city shows the city only once
+* Duplicating an event does not copy its import key
 
 = 1.5.1 =
 * NEW: Hooks for add-ons: threecal_user_can_save_event, threecal_user_can_delete_event, threecal_admin_events, threecal_admin_category_choices, threecal_event_edit_meta_boxes, threecal_event_saved, threecal_event_deleted, threecal_event_data, threecal_event_details
@@ -265,6 +300,9 @@ Please use the [WordPress.org support forum](https://wordpress.org/support/plugi
 * German translation included
 
 == Upgrade Notice ==
+
+= 1.6.0 =
+Events with only the month known ("July 2027, date to be announced") and CSV import with preview and WP-CLI command. No change for existing events.
 
 = 1.5.1 =
 Hooks for add-ons such as 3task Calendar Pro. No change for existing calendars.

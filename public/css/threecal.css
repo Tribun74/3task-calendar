@@ -1658,3 +1658,90 @@ a.threecal-event-ics {
         transform: none;
     }
 }
+
+/* ==========================================================================
+   Only the month is known: "Date to be announced" (since 1.6.0)
+   ========================================================================== */
+.threecal-tba {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--tc-ev, var(--tc-accent)) 12%, var(--tc-surface, #ffffff));
+    color: color-mix(in srgb, var(--tc-ev, var(--tc-accent)) 70%, var(--tc-text, #141824));
+    font-size: 0.85em;
+    font-weight: 650;
+    line-height: 1.5;
+    white-space: nowrap;
+}
+
+.threecal-month-tba {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border: 1px dashed var(--tc-border);
+    border-radius: var(--tc-radius-sm);
+    background: var(--tc-surface);
+}
+
+.threecal-month-tba-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--tc-muted);
+    font-size: 13px;
+    font-weight: 650;
+}
+
+.threecal-month-tba-events {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-width: 0;
+}
+
+.threecal-wrapper .threecal-tba-event {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 100%;
+    min-width: 0;
+    padding: 4px 10px;
+    border-left: 3px solid var(--tc-ev, var(--tc-accent));
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--tc-ev, var(--tc-accent)) 13%, var(--tc-surface));
+    color: color-mix(in srgb, var(--tc-ev, var(--tc-accent)) 55%, var(--tc-text));
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.35;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+
+.threecal-wrapper .threecal-tba-event:hover {
+    box-shadow: 0 4px 10px color-mix(in srgb, var(--tc-ev, var(--tc-accent)) 25%, transparent);
+}
+
+.threecal-wrapper .threecal-tba-event:focus-visible {
+    outline: 2px solid var(--tc-accent);
+    outline-offset: 2px;
+}
+
+.threecal-wrapper .threecal-tba-event.threecal-is-cancelled .threecal-event-title {
+    text-decoration: line-through;
+}
+
+.threecal-date-badge-tba .threecal-date-badge-day {
+    font-size: 17px;
+}
+
+.threecal-date-badge-small.threecal-date-badge-tba .threecal-date-badge-day {
+    font-size: 13px;
+}
+
+.threecal-poster-date-tba .threecal-poster-day {
+    font-size: 1em;
+    text-transform: uppercase;
+}

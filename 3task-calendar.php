@@ -3,7 +3,7 @@
  * Plugin Name:       3task Calendar
  * Plugin URI:        https://www.3task.de/3task-calendar-pro/
  * Description:       Event calendar without external services: recurring events, iCal subscription, categories, locations and event schema. Month and list views, German translation included.
- * Version:           1.5.1
+ * Version:           1.6.0
  * Author:            3task
  * Author URI:        https://www.3task.de
  * License:           GPL-2.0+
@@ -23,7 +23,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin constants
-define('THREECAL_VERSION', '1.5.1');
+define('THREECAL_VERSION', '1.6.0');
 define('THREECAL_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('THREECAL_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('THREECAL_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -118,6 +118,13 @@ final class ThreeCal {
         require_once THREECAL_PLUGIN_DIR . 'includes/class-icons.php';
         require_once THREECAL_PLUGIN_DIR . 'includes/class-themes.php';
         require_once THREECAL_PLUGIN_DIR . 'includes/class-post-dates.php';
+        require_once THREECAL_PLUGIN_DIR . 'includes/class-importer.php';
+
+        // WP-CLI: wp threecal import <file.csv>
+        if (defined('WP_CLI') && WP_CLI) {
+            require_once THREECAL_PLUGIN_DIR . 'includes/class-cli.php';
+            WP_CLI::add_command('threecal', 'ThreeCal_CLI');
+        }
 
         // Admin classes
         if (is_admin()) {
@@ -372,7 +379,15 @@ final class ThreeCal {
             return;
         }
 
-        $events = ThreeCal_Event::get_upcoming(5, $category);
+        // Google needs a concrete start date: events of which only the month is
+        // known get no markup and do not take one of the five places.
+        $events = array_slice(
+            array_values(array_filter(ThreeCal_Event::get_upcoming(50, $category), function ($event) {
+                return !$event->is_month_only();
+            })),
+            0,
+            5
+        );
         if (empty($events)) {
             return;
         }
@@ -459,6 +474,10 @@ final class ThreeCal {
      * Output individual event schema
      */
     private function output_event_schema($event, $page_url = '', $page_post = null) {
+        if ($event->is_month_only()) {
+            return;
+        }
+
         // Google requires a real place and does not allow office hours or other
         // non-events as Event markup: no location or an excluded category, no markup.
         $location = $event->location_id ? ThreeCal_Location::get($event->location_id) : null;
@@ -705,6 +724,7 @@ final class ThreeCal {
             'start' => $event->start_date,
             'end' => $event->end_date,
             'allDay' => (bool) $event->all_day,
+            'datePrecision' => $event->is_month_only() ? 'month' : 'day',
             'cancelled' => 'cancelled' === $event->status,
             'location' => $location,
             'categories' => $cat_data,
@@ -769,8 +789,12 @@ final class ThreeCal {
         foreach ($events as $event) {
             $event_data = $this->format_event_for_api($event, isset($categories[$event->id]) ? $categories[$event->id] : array());
 
-            $days = $event->get_days_in_month( $month, $year );
+            // Only the month is known: the views show it above the grid, not on a day.
+            $month_only = $event->is_month_only();
+            $days = $month_only ? array() : $event->get_days_in_month( $month, $year );
             $event_data['days'] = $days;
+            $event_data['month_only'] = $month_only;
+            $event_data['tba'] = $month_only ? ThreeCal_Event::tba_text() : '';
             $event_data['postponed'] = ThreeCal_Post_Dates::postponed_text($event);
             $event_data['day']  = $days ? $days[0] : (int) gmdate( 'j', strtotime( $event->start_date ) );
             if ( $event->all_day ) {
@@ -836,22 +860,25 @@ final class ThreeCal {
         $time_format = threecal_time_format();
 
         $same_day = !$event->end_date || substr($event->start_date, 0, 10) === substr($event->end_date, 0, 10);
+        $month_only = $event->is_month_only();
 
         $data = array(
             'id' => $event->id,
             'title' => $event->title,
             'description' => wp_kses_post(wpautop($event->description)),
-            'start_date' => date_i18n($date_format, strtotime($event->start_date)),
-            'end_date' => $same_day ? null : date_i18n($date_format, strtotime($event->end_date)),
-            'start_time' => !$event->all_day ? date_i18n($time_format, strtotime($event->start_date)) : null,
-            'end_time' => (!$event->all_day && $event->end_date) ? date_i18n($time_format, strtotime($event->end_date)) : null,
+            'start_date' => $month_only ? $event->month_label() : date_i18n($date_format, strtotime($event->start_date)),
+            'end_date' => ($same_day || $month_only) ? null : date_i18n($date_format, strtotime($event->end_date)),
+            'start_time' => (!$event->all_day && !$month_only) ? date_i18n($time_format, strtotime($event->start_date)) : null,
+            'end_time' => (!$event->all_day && !$month_only && $event->end_date) ? date_i18n($time_format, strtotime($event->end_date)) : null,
             'all_day' => (bool) $event->all_day,
+            'month_only' => $month_only,
+            'tba' => $month_only ? ThreeCal_Event::tba_text() : '',
             'cancelled' => 'cancelled' === $event->status,
             'location' => $location,
             'categories' => $cat_data,
             'color' => $event->color,
             'url' => $event->url ? esc_url_raw($event->url) : '',
-            'ics_url' => ThreeCal_ICS::event_url($event->id),
+            'ics_url' => $month_only ? '' : ThreeCal_ICS::event_url($event->id),
             'postponed' => ThreeCal_Post_Dates::postponed_text($event),
             'featured_image' => $event->featured_image ? wp_get_attachment_url($event->featured_image) : null
         );

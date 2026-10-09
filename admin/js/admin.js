@@ -17,6 +17,7 @@
             this.initColorPicker();
             this.initMediaUploader();
             this.initAllDayToggle();
+            this.initPrecisionToggle();
             this.initDeleteConfirm();
             this.initSlugGeneration();
             this.initHeartModal();
@@ -195,6 +196,41 @@
             if ($checkbox.length) {
                 toggleTimeInputs();
             }
+        },
+
+        /**
+         * Switch between "the date is known" and "only the month is known".
+         * A month-only event has no day, no time and no repeat pattern.
+         */
+        initPrecisionToggle: function() {
+            var $radios = $('input[name="event_date_precision"]');
+            if (!$radios.length) {
+                return;
+            }
+            var $monthField = $('.threecal-month-field');
+            var $monthInput = $('#event_start_month');
+            var $dayFields = $('.threecal-day-fields');
+            var $startInput = $('#event_start_date');
+            var $repeat = $('.threecal-recurrence-fields');
+
+            function apply() {
+                var monthOnly = $radios.filter(':checked').val() === 'month';
+                $monthField.prop('hidden', !monthOnly);
+                $monthInput.prop('required', monthOnly);
+                $dayFields.prop('hidden', monthOnly);
+                $startInput.prop('required', !monthOnly);
+                $repeat.prop('hidden', monthOnly);
+                if (monthOnly) {
+                    $('#event_recurrence').val('');
+                    // Take the month of the date that is already entered.
+                    if (!$monthInput.val() && $startInput.val()) {
+                        $monthInput.val($startInput.val().substr(0, 7));
+                    }
+                }
+            }
+
+            $radios.on('change', apply);
+            apply();
         },
 
         /**

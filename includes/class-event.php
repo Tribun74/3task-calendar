@@ -129,6 +129,140 @@ class ThreeCal_Event {
 	}
 
 	/**
+	 * Settings key for the precision of the date: 'day' (default) or 'month'.
+	 *
+	 * @since 1.6.0
+	 */
+	const PRECISION_KEY = 'date_precision';
+
+	/**
+	 * Settings key for the key of an imported event (CSV import).
+	 *
+	 * @since 1.6.0
+	 */
+	const IMPORT_KEY = 'import_key';
+
+	/**
+	 * Whether only the month of this event is known ("July 2027, date to be announced").
+	 *
+	 * @since 1.6.0
+	 * @return bool
+	 */
+	public function is_month_only() {
+		return 'month' === $this->get_setting( self::PRECISION_KEY, 'day' );
+	}
+
+	/**
+	 * Set the precision of the date.
+	 *
+	 * 'month' moves the start to the first day of its month at 00:00, makes the
+	 * event all day and removes the end and the repeat pattern. 'day' removes
+	 * the key again, so normal events keep the settings they always had.
+	 *
+	 * @since 1.6.0
+	 * @param string $precision 'day' or 'month'.
+	 */
+	public function set_date_precision( $precision ) {
+		if ( 'month' === $precision ) {
+			$this->set_setting( self::PRECISION_KEY, 'month' );
+			$this->start_date      = substr( (string) $this->start_date, 0, 7 ) . '-01 00:00:00';
+			$this->end_date        = '';
+			$this->all_day         = true;
+			$this->recurrence_rule = '';
+			$this->recurrence_end  = '';
+			return;
+		}
+		if ( is_array( $this->settings ) ) {
+			unset( $this->settings[ self::PRECISION_KEY ] );
+		}
+	}
+
+	/**
+	 * Month of a month-only event in the language of the site ("July 2027").
+	 *
+	 * @since 1.6.0
+	 * @return string
+	 */
+	public function month_label() {
+		return date_i18n( 'F Y', strtotime( (string) $this->start_date ) );
+	}
+
+	/**
+	 * Convert a month (YYYY-MM) to the first day of that month as Y-m-d H:i:s.
+	 *
+	 * @since 1.6.0
+	 * @param string $value Month, for example 2027-07.
+	 * @return string Empty string for invalid input.
+	 */
+	public static function parse_month( $value ) {
+		if ( ! preg_match( '/^(\d{4})-(\d{1,2})$/', trim( (string) $value ), $parts ) ) {
+			return '';
+		}
+		$year  = (int) $parts[1];
+		$month = (int) $parts[2];
+		if ( $month < 1 || $month > 12 || $year < 1900 || $year > 2100 ) {
+			return '';
+		}
+		return sprintf( '%04d-%02d-01 00:00:00', $year, $month );
+	}
+
+	/**
+	 * Note shown next to the month of a month-only event.
+	 *
+	 * @since 1.6.0
+	 * @return string
+	 */
+	public static function tba_text() {
+		return __( 'Date to be announced', '3task-calendar' );
+	}
+
+	/**
+	 * LIKE pattern that finds month-only events in the settings column.
+	 *
+	 * @return string
+	 */
+	private static function month_only_like() {
+		return '%"' . self::PRECISION_KEY . '":"month"%';
+	}
+
+	/**
+	 * Find the event with this import key (CSV import).
+	 *
+	 * Repetitions of a series are not considered, they have no key.
+	 *
+	 * @since 1.6.0
+	 * @param string $key Import key.
+	 * @return ThreeCal_Event|null
+	 */
+	public static function find_by_import_key( $key ) {
+		global $wpdb;
+
+		$key = (string) $key;
+		if ( '' === $key ) {
+			return null;
+		}
+
+		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom table, table name is internal.
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				'SELECT * FROM ' . self::table() . ' WHERE (parent_id IS NULL OR parent_id = 0) AND settings LIKE %s ORDER BY id ASC',
+				'%' . $wpdb->esc_like( '"' . self::IMPORT_KEY . '":' . wp_json_encode( $key ) ) . '%'
+			)
+		);
+		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
+
+		// The LIKE only narrows the search, the decoded settings decide.
+		foreach ( (array) $rows as $row ) {
+			$event = new self( $row );
+			if ( $key === (string) $event->get_setting( self::IMPORT_KEY, '' ) ) {
+				return $event;
+			}
+		}
+
+		return null;
+	}
+
+	/**
 	 * Build the WHERE clause shared by get_all() and count().
 	 *
 	 * Date arguments:
@@ -188,14 +322,19 @@ class ThreeCal_Event {
 			$values[] = $args['range_end'];
 		}
 
+		// A month-only event lasts until its month is over (its start is the first of the month).
 		if ( ! empty( $args['range_start'] ) ) {
-			$where[]  = 'COALESCE(e.end_date, e.start_date) >= %s';
+			$where[]  = '(COALESCE(e.end_date, e.start_date) >= %s OR (e.start_date >= %s AND e.settings LIKE %s))';
 			$values[] = $args['range_start'];
+			$values[] = substr( (string) $args['range_start'], 0, 7 ) . '-01 00:00:00';
+			$values[] = self::month_only_like();
 		}
 
 		if ( ! empty( $args['ends_after'] ) ) {
-			$where[]  = 'COALESCE(e.end_date, e.start_date) >= %s';
+			$where[]  = '(COALESCE(e.end_date, e.start_date) >= %s OR (e.start_date >= %s AND e.settings LIKE %s))';
 			$values[] = $args['ends_after'];
+			$values[] = substr( (string) $args['ends_after'], 0, 7 ) . '-01 00:00:00';
+			$values[] = self::month_only_like();
 		}
 
 		if ( ! empty( $args['search'] ) ) {
@@ -919,6 +1058,11 @@ class ThreeCal_Event {
 		$new_event->color          = $this->color;
 		$new_event->status         = 'draft';
 		$new_event->settings       = $this->settings;
+
+		// The copy is a new event: an import must not find it under the key of the original.
+		if ( is_array( $new_event->settings ) ) {
+			unset( $new_event->settings[ self::IMPORT_KEY ] );
+		}
 
 		if ( $new_event->save() ) {
 			// Copy categories.

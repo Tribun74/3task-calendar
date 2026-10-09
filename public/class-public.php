@@ -88,9 +88,11 @@ class ThreeCal_Public {
                 'more_info' => __('More information', '3task-calendar'),
                 'add_to_calendar' => __('Add to my calendar', '3task-calendar'),
                 'plan_route' => __('Plan route (OpenStreetMap)', '3task-calendar'),
+                'range_to' => _x('to', 'between two dates or times', '3task-calendar'),
                 /* translators: Date in the list view. Keep {day} and {month}, they are replaced with the day number and the month name. */
                 'list_date' => __('{month} {day}', '3task-calendar'),
                 'cancelled' => __('Cancelled', '3task-calendar'),
+                'month_tba' => __('This month, date to be announced', '3task-calendar'),
                 'months' => array(
                     __('January', '3task-calendar'),
                     __('February', '3task-calendar'),

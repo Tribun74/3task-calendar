@@ -156,6 +156,10 @@ class ThreeCal_Admin {
                 'title' => __( 'Posts', '3task-calendar' ),
                 'icon'  => 'article',
             ),
+            'import'     => array(
+                'title' => __( 'Import', '3task-calendar' ),
+                'icon'  => 'file-import',
+            ),
             'design'     => array(
                 'title' => __( 'Design', '3task-calendar' ),
                 'icon'  => 'palette',
@@ -262,6 +266,9 @@ class ThreeCal_Admin {
             case 'posts':
                 ThreeCal_Post_Dates::render_settings_page();
                 break;
+            case 'import':
+                $this->render_import();
+                break;
             case 'settings':
                 $this->render_settings();
                 break;
@@ -336,12 +343,18 @@ class ThreeCal_Admin {
                     <li style="<?php echo esc_attr( ThreeCal_Themes::event_style( $color ) ); ?>">
                         <span class="threecal-admin-date">
                             <span><?php echo esc_html( date_i18n( 'M', $start ) ); ?></span>
-                            <strong><?php echo esc_html( date_i18n( 'j', $start ) ); ?></strong>
+                            <strong><?php echo esc_html( date_i18n( $event->is_month_only() ? 'Y' : 'j', $start ) ); ?></strong>
                         </span>
                         <span class="threecal-admin-upcoming-text">
                             <a href="<?php echo esc_url( $edit ); ?>"><?php echo esc_html( $event->title ); ?></a>
                             <span class="threecal-muted">
-                                <?php echo esc_html( $event->all_day ? __( 'All day', '3task-calendar' ) : date_i18n( threecal_time_format(), $start ) ); ?>
+                                <?php
+                                if ( $event->is_month_only() ) {
+                                    echo esc_html( $event->month_label() . ' · ' . ThreeCal_Event::tba_text() );
+                                } else {
+                                    echo esc_html( $event->all_day ? __( 'All day', '3task-calendar' ) : date_i18n( threecal_time_format(), $start ) );
+                                }
+                                ?>
                                 <?php if ( $event->parent_id ) : ?> · <?php esc_html_e( 'Series', '3task-calendar' ); ?><?php endif; ?>
                             </span>
                         </span>
@@ -546,12 +559,16 @@ class ThreeCal_Admin {
                 <li class="threecal-event-row status-<?php echo esc_attr( $event->status ); ?>" style="<?php echo esc_attr( ThreeCal_Themes::event_style( $color ) ); ?>">
                     <span class="threecal-admin-date">
                         <span><?php echo esc_html( date_i18n( 'M', $start ) ); ?></span>
-                        <strong><?php echo esc_html( date_i18n( 'j', $start ) ); ?></strong>
+                        <strong><?php echo esc_html( date_i18n( $event->is_month_only() ? 'Y' : 'j', $start ) ); ?></strong>
                     </span>
                     <span class="threecal-event-row-main">
                         <a class="threecal-event-row-title" href="<?php echo esc_url( $edit_url ); ?>"><?php echo esc_html( $event->title ); ?></a>
                         <span class="threecal-event-row-meta">
+                            <?php if ( $event->is_month_only() ) : ?>
+                            <span><?php ThreeCal_Icons::render( 'calendar-question', 14 ); ?><?php echo esc_html( $event->month_label() . ' · ' . ThreeCal_Event::tba_text() ); ?></span>
+                            <?php else : ?>
                             <span><?php ThreeCal_Icons::render( 'clock', 14 ); ?><?php echo esc_html( date_i18n( threecal_date_format(), $start ) . ( $event->all_day ? ' · ' . __( 'All day', '3task-calendar' ) : ' · ' . date_i18n( threecal_time_format(), $start ) ) ); ?></span>
+                            <?php endif; ?>
                             <?php if ( ! empty( $event->recurrence_rule ) && isset( $rules[ $event->recurrence_rule ] ) ) : ?>
                             <span class="threecal-series-badge"><?php ThreeCal_Icons::render( 'repeat', 12 ); ?><?php echo esc_html( $rules[ $event->recurrence_rule ] ); ?><?php if ( $event->recurrence_end ) : ?>, <?php echo esc_html( sprintf( /* translators: %s: end date of a series */ __( 'until %s', '3task-calendar' ), date_i18n( threecal_date_format(), strtotime( $event->recurrence_end ) ) ) ); ?><?php endif; ?></span>
                             <?php endif; ?>
@@ -1111,16 +1128,22 @@ class ThreeCal_Admin {
 
         $now = current_time( 'mysql' );
 
+        // Events of which only the month is known count as upcoming until their month is over.
+        $month_start = substr( $now, 0, 7 ) . '-01 00:00:00';
+        $month_like  = '%"' . ThreeCal_Event::PRECISION_KEY . '":"month"%';
+
         // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table for events.
         if ( 'upcoming' === $scope ) {
             $results = $wpdb->get_results(
                 $wpdb->prepare(
                     "SELECT * FROM {$wpdb->prefix}threecal_events
                     WHERE (parent_id IS NULL OR parent_id = 0)
-                    AND (COALESCE(end_date, start_date) >= %s OR (recurrence_rule IS NOT NULL AND recurrence_rule <> '' AND COALESCE(recurrence_end, start_date) >= %s))
+                    AND (COALESCE(end_date, start_date) >= %s OR (recurrence_rule IS NOT NULL AND recurrence_rule <> '' AND COALESCE(recurrence_end, start_date) >= %s) OR (start_date >= %s AND settings LIKE %s))
                     ORDER BY start_date ASC",
                     $now,
-                    $now
+                    $now,
+                    $month_start,
+                    $month_like
                 )
             );
         } elseif ( 'past' === $scope ) {
@@ -1130,9 +1153,12 @@ class ThreeCal_Admin {
                     WHERE (parent_id IS NULL OR parent_id = 0)
                     AND COALESCE(end_date, start_date) < %s
                     AND (recurrence_rule IS NULL OR recurrence_rule = '' OR COALESCE(recurrence_end, start_date) < %s)
+                    AND NOT (start_date >= %s AND COALESCE(settings, '') LIKE %s)
                     ORDER BY start_date DESC",
                     $now,
-                    $now
+                    $now,
+                    $month_start,
+                    $month_like
                 )
             );
         } else {
@@ -1269,6 +1295,11 @@ class ThreeCal_Admin {
      * Handle form submissions
      */
     private function handle_form_submissions() {
+        // Sample file for the CSV import.
+        if ( isset( $_GET['threecal_import_sample'], $_GET['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'threecal_import_sample' ) ) {
+            $this->send_import_sample();
+        }
+
         // Save event.
         if ( isset( $_POST['threecal_save_event'] ) && check_admin_referer( 'threecal_save_event' ) ) {
             $this->save_event();
@@ -1369,6 +1400,19 @@ class ThreeCal_Admin {
         $event->start_date = $this->normalize_datetime( $event->start_date );
         $event->end_date   = $event->end_date ? $this->normalize_datetime( $event->end_date ) : '';
 
+        // Precision: the day is known, or only the month ("July 2027, date to be announced").
+        $precision = ( isset( $_POST['event_date_precision'] ) && 'month' === sanitize_key( wp_unslash( $_POST['event_date_precision'] ) ) ) ? 'month' : 'day';
+        if ( 'month' === $precision ) {
+            $event->start_date = self::normalize_month( isset( $_POST['event_start_month'] ) ? sanitize_text_field( wp_unslash( $_POST['event_start_month'] ) ) : '' );
+            if ( '' === $event->title || '' === $event->start_date ) {
+                wp_die( esc_html__( 'Please enter a title and a valid month, for example 2027-07.', '3task-calendar' ), '', array( 'back_link' => true ) );
+            }
+            $rule = isset( $_POST['event_recurrence'] ) ? sanitize_key( wp_unslash( $_POST['event_recurrence'] ) ) : '';
+            if ( '' !== $rule && ! $event->parent_id ) {
+                wp_die( esc_html__( 'An event of which only the month is known cannot repeat. Set "Repeat" to "Does not repeat".', '3task-calendar' ), '', array( 'back_link' => true ) );
+            }
+        }
+
         if ( '' === $event->title || '' === $event->start_date ) {
             wp_die( esc_html__( 'Please enter a title and a valid start date.', '3task-calendar' ), '', array( 'back_link' => true ) );
         }
@@ -1402,6 +1446,9 @@ class ThreeCal_Admin {
             $until = isset( $_POST['event_recurrence_end'] ) ? $this->normalize_datetime( sanitize_text_field( wp_unslash( $_POST['event_recurrence_end'] ) ) ) : '';
             $event->recurrence_end = ( $event->recurrence_rule && $until ) ? substr( $until, 0, 10 ) . ' 23:59:59' : '';
         }
+
+        // Month only: first of the month, all day, no end, no repeat. Day: as before.
+        $event->set_date_precision( $precision );
 
         if ( $event->save() ) {
             // Set categories.
@@ -1461,6 +1508,17 @@ class ThreeCal_Admin {
             }
         }
         return '';
+    }
+
+    /**
+     * Convert a month (YYYY-MM) to the first day of that month as Y-m-d H:i:s.
+     *
+     * @since 1.6.0
+     * @param string $value Submitted value.
+     * @return string Empty string for invalid input.
+     */
+    public static function normalize_month( $value ) {
+        return ThreeCal_Event::parse_month( $value );
     }
 
     /**
@@ -1689,6 +1747,334 @@ class ThreeCal_Admin {
             ), admin_url('admin.php')));
             exit;
         }
+    }
+
+    /**
+     * Transient that holds a checked import between preview and import.
+     *
+     * @since 1.6.0
+     * @param int    $user_id User ID.
+     * @param string $token   Random token of the preview.
+     * @return string
+     */
+    private static function import_transient( $user_id, $token ) {
+        return 'threecal_import_' . (int) $user_id . '_' . $token;
+    }
+
+    /**
+     * Importer with the rights of the current user: categories and locations
+     * are only created by users who may manage them.
+     *
+     * @since 1.6.0
+     * @return ThreeCal_Importer
+     */
+    private function importer() {
+        return new ThreeCal_Importer(
+            array(
+                'create_categories' => current_user_can( 'manage_threecal_categories' ),
+                'create_locations'  => current_user_can( 'manage_threecal_locations' ),
+            )
+        );
+    }
+
+    /**
+     * Check the uploaded CSV file.
+     *
+     * @since 1.6.0
+     * @return array|WP_Error Array( temporary path, file name ).
+     */
+    private function uploaded_csv() {
+        // phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce checked in render_import() before this is called.
+        if ( empty( $_FILES['threecal_csv'] ) || ! is_array( $_FILES['threecal_csv'] ) ) {
+            return new WP_Error( 'threecal_import_nofile', __( 'Please choose a CSV file.', '3task-calendar' ) );
+        }
+        $error = isset( $_FILES['threecal_csv']['error'] ) ? (int) $_FILES['threecal_csv']['error'] : UPLOAD_ERR_NO_FILE;
+        $size  = isset( $_FILES['threecal_csv']['size'] ) ? (int) $_FILES['threecal_csv']['size'] : 0;
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Temporary path from PHP, checked with is_uploaded_file() below.
+        $tmp   = isset( $_FILES['threecal_csv']['tmp_name'] ) ? (string) $_FILES['threecal_csv']['tmp_name'] : '';
+        $name  = isset( $_FILES['threecal_csv']['name'] ) ? sanitize_file_name( wp_unslash( $_FILES['threecal_csv']['name'] ) ) : '';
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        if ( UPLOAD_ERR_NO_FILE === $error ) {
+            return new WP_Error( 'threecal_import_nofile', __( 'Please choose a CSV file.', '3task-calendar' ) );
+        }
+        if ( UPLOAD_ERR_INI_SIZE === $error || UPLOAD_ERR_FORM_SIZE === $error || $size > ThreeCal_Importer::MAX_BYTES ) {
+            /* translators: %s: maximum file size, for example "2 MB" */
+            return new WP_Error( 'threecal_import_size', sprintf( __( 'The file is larger than %s.', '3task-calendar' ), size_format( ThreeCal_Importer::MAX_BYTES ) ) );
+        }
+        if ( UPLOAD_ERR_OK !== $error || '' === $tmp || ! is_uploaded_file( $tmp ) ) {
+            return new WP_Error( 'threecal_import_upload', __( 'The upload did not work. Please try again.', '3task-calendar' ) );
+        }
+        if ( ! in_array( strtolower( pathinfo( $name, PATHINFO_EXTENSION ) ), array( 'csv', 'txt' ), true ) ) {
+            return new WP_Error( 'threecal_import_type', __( 'Please upload a file ending in .csv.', '3task-calendar' ) );
+        }
+
+        return array( $tmp, $name );
+    }
+
+    /**
+     * Send the sample CSV for the import.
+     *
+     * @since 1.6.0
+     */
+    private function send_import_sample() {
+        if ( ! current_user_can( 'edit_threecal_events' ) ) {
+            wp_die( esc_html__( 'Permission denied.', '3task-calendar' ) );
+        }
+        nocache_headers();
+        header( 'Content-Type: text/csv; charset=utf-8' );
+        header( 'Content-Disposition: attachment; filename="3task-calendar-import-sample.csv"' );
+        echo ThreeCal_Importer::sample_csv(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSV download, not HTML.
+        exit;
+    }
+
+    /**
+     * Render import tab: upload a CSV file, check the preview, then import.
+     *
+     * @since 1.6.0
+     */
+    private function render_import() {
+        if ( ! current_user_can( 'edit_threecal_events' ) ) {
+            echo '<div class="notice notice-error"><p>' . esc_html__( 'Permission denied.', '3task-calendar' ) . '</p></div>';
+            return;
+        }
+
+        $user_id = get_current_user_id();
+        $plan    = null;
+        $result  = null;
+        $token   = '';
+        $error   = '';
+        $file    = '';
+
+        if ( isset( $_POST['threecal_import_preview'] ) ) {
+            check_admin_referer( 'threecal_import_upload' );
+            $status = ( isset( $_POST['threecal_import_status'] ) && 'publish' === sanitize_key( wp_unslash( $_POST['threecal_import_status'] ) ) ) ? 'publish' : 'draft';
+            $upload = $this->uploaded_csv();
+            $parsed = is_wp_error( $upload ) ? $upload : ThreeCal_Importer::read_file( $upload[0] );
+            if ( is_wp_error( $parsed ) ) {
+                $error = $parsed->get_error_message();
+            } else {
+                $file  = $upload[1];
+                $plan  = $this->importer()->analyze( $parsed, $status );
+                $token = wp_generate_password( 24, false );
+                // Only the checked plan is kept, on the server and for this user.
+                set_transient(
+                    self::import_transient( $user_id, $token ),
+                    array(
+                        'user' => $user_id,
+                        'file' => $file,
+                        'plan' => $plan,
+                    ),
+                    30 * MINUTE_IN_SECONDS
+                );
+            }
+        } elseif ( isset( $_POST['threecal_import_run'] ) ) {
+            $token = isset( $_POST['threecal_import_token'] ) ? preg_replace( '/[^A-Za-z0-9]/', '', sanitize_text_field( wp_unslash( $_POST['threecal_import_token'] ) ) ) : '';
+            check_admin_referer( 'threecal_import_run_' . $token );
+            $stored = '' !== $token ? get_transient( self::import_transient( $user_id, $token ) ) : false;
+            if ( ! is_array( $stored ) || (int) $stored['user'] !== $user_id || empty( $stored['plan'] ) ) {
+                $error = __( 'The preview has expired. Please upload the file again.', '3task-calendar' );
+            } else {
+                delete_transient( self::import_transient( $user_id, $token ) );
+                $plan   = $stored['plan'];
+                $file   = $stored['file'];
+                $result = $this->importer()->run( $plan );
+            }
+        }
+
+        $labels     = array(
+            'new'    => __( 'New', '3task-calendar' ),
+            'update' => __( 'Will be updated', '3task-calendar' ),
+            'error'  => __( 'Error', '3task-calendar' ),
+        );
+        $sample_url = wp_nonce_url( admin_url( 'admin.php?page=3task-calendar&tab=import&threecal_import_sample=1' ), 'threecal_import_sample' );
+        $base_url   = admin_url( 'admin.php?page=3task-calendar&tab=import' );
+        ?>
+        <?php if ( '' !== $error ) : ?>
+        <div class="notice notice-error"><p><?php echo esc_html( $error ); ?></p></div>
+        <?php endif; ?>
+
+        <?php if ( $result ) : ?>
+        <div class="notice notice-success">
+            <p>
+                <?php
+                echo esc_html(
+                    sprintf(
+                        /* translators: 1: created events, 2: updated events, 3: rows with errors */
+                        __( 'Import done: %1$s new, %2$s updated, %3$s rows with errors skipped.', '3task-calendar' ),
+                        number_format_i18n( $result['created'] ),
+                        number_format_i18n( $result['updated'] ),
+                        number_format_i18n( $result['skipped'] + $result['failed'] )
+                    )
+                );
+                ?>
+                <?php if ( $result['categories_created'] || $result['locations_created'] ) : ?>
+                <br>
+                <?php
+                echo esc_html(
+                    sprintf(
+                        /* translators: 1: number of categories, 2: number of locations */
+                        __( 'Created along the way: %1$s categories, %2$s locations.', '3task-calendar' ),
+                        number_format_i18n( $result['categories_created'] ),
+                        number_format_i18n( $result['locations_created'] )
+                    )
+                );
+                ?>
+                <?php endif; ?>
+            </p>
+            <?php foreach ( $result['messages'] as $message ) : ?>
+            <p><?php echo esc_html( $message ); ?></p>
+            <?php endforeach; ?>
+            <p>
+                <a class="button button-primary" href="<?php echo esc_url( admin_url( 'admin.php?page=3task-calendar&tab=events&scope=all' ) ); ?>"><?php esc_html_e( 'Show events', '3task-calendar' ); ?></a>
+                <a class="button" href="<?php echo esc_url( $base_url ); ?>"><?php esc_html_e( 'Import another file', '3task-calendar' ); ?></a>
+            </p>
+        </div>
+        <?php elseif ( $plan ) : ?>
+        <div class="threecal-card threecal-import-preview">
+            <h3><?php esc_html_e( 'Preview', '3task-calendar' ); ?> <span class="threecal-muted"><?php echo esc_html( $file ); ?></span></h3>
+            <p>
+                <?php
+                echo esc_html(
+                    sprintf(
+                        /* translators: 1: new events, 2: updated events, 3: rows with errors */
+                        __( 'Nothing has been saved yet. %1$s new, %2$s will be updated, %3$s rows with errors.', '3task-calendar' ),
+                        number_format_i18n( $plan['counts']['new'] ),
+                        number_format_i18n( $plan['counts']['update'] ),
+                        number_format_i18n( $plan['counts']['error'] )
+                    )
+                );
+                ?>
+            </p>
+            <?php if ( ! empty( $plan['unknown'] ) ) : ?>
+            <p class="description">
+                <?php
+                /* translators: %s: list of column names */
+                echo esc_html( sprintf( __( 'Unknown columns are ignored: %s', '3task-calendar' ), implode( ', ', $plan['unknown'] ) ) );
+                ?>
+            </p>
+            <?php endif; ?>
+            <?php if ( ! empty( $plan['new_categories'] ) ) : ?>
+            <p class="description">
+                <?php
+                /* translators: %s: list of names */
+                echo esc_html( sprintf( __( 'New categories: %s', '3task-calendar' ), implode( ', ', $plan['new_categories'] ) ) );
+                ?>
+            </p>
+            <?php endif; ?>
+            <?php if ( ! empty( $plan['new_locations'] ) ) : ?>
+            <p class="description">
+                <?php
+                /* translators: %s: list of names */
+                echo esc_html( sprintf( __( 'New locations: %s', '3task-calendar' ), implode( ', ', $plan['new_locations'] ) ) );
+                ?>
+            </p>
+            <?php endif; ?>
+
+            <div class="threecal-import-table-wrap">
+            <table class="widefat striped threecal-import-table">
+                <thead>
+                    <tr>
+                        <th scope="col"><?php esc_html_e( 'Row', '3task-calendar' ); ?></th>
+                        <th scope="col"><?php esc_html_e( 'Result', '3task-calendar' ); ?></th>
+                        <th scope="col"><?php esc_html_e( 'Title', '3task-calendar' ); ?></th>
+                        <th scope="col"><?php esc_html_e( 'Date', '3task-calendar' ); ?></th>
+                        <th scope="col"><?php esc_html_e( 'Note', '3task-calendar' ); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ( $plan['rows'] as $item ) : ?>
+                    <tr class="is-<?php echo esc_attr( $item['action'] ); ?>">
+                        <td><?php echo esc_html( $item['row'] ); ?></td>
+                        <td><span class="threecal-import-badge is-<?php echo esc_attr( $item['action'] ); ?>"><?php echo esc_html( $labels[ $item['action'] ] ); ?></span></td>
+                        <td><?php echo esc_html( $item['title'] ); ?></td>
+                        <td>
+                            <?php
+                            if ( ! empty( $item['data'] ) ) {
+                                $threecal_ts = strtotime( $item['data']['start'] );
+                                if ( 'month' === $item['data']['precision'] ) {
+                                    echo esc_html( date_i18n( 'F Y', $threecal_ts ) . ' · ' . ThreeCal_Event::tba_text() );
+                                } else {
+                                    echo esc_html( date_i18n( threecal_date_format(), $threecal_ts ) . ( $item['data']['all_day'] ? '' : ' · ' . date_i18n( threecal_time_format(), $threecal_ts ) ) );
+                                }
+                            }
+                            ?>
+                        </td>
+                        <td><?php echo esc_html( $item['message'] ); ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            </div>
+
+            <form method="post" class="threecal-import-run">
+                <?php wp_nonce_field( 'threecal_import_run_' . $token ); ?>
+                <input type="hidden" name="threecal_import_token" value="<?php echo esc_attr( $token ); ?>">
+                <p>
+                    <button type="submit" name="threecal_import_run" class="button button-primary"<?php disabled( 0 === $plan['counts']['new'] + $plan['counts']['update'] ); ?>><?php esc_html_e( 'Run import', '3task-calendar' ); ?></button>
+                    <a class="button" href="<?php echo esc_url( $base_url ); ?>"><?php esc_html_e( 'Cancel', '3task-calendar' ); ?></a>
+                </p>
+                <p class="description"><?php esc_html_e( 'Rows with errors are skipped. The preview stays valid for 30 minutes.', '3task-calendar' ); ?></p>
+            </form>
+        </div>
+        <?php else : ?>
+        <div class="threecal-card">
+            <h3><?php esc_html_e( 'Import events from a CSV file', '3task-calendar' ); ?></h3>
+            <p><?php esc_html_e( 'Upload a CSV file. You first see a preview of what will happen, nothing is saved before you confirm. A row with an import_key that already exists updates that event, so the same file can be imported again without creating duplicates.', '3task-calendar' ); ?></p>
+            <form method="post" enctype="multipart/form-data" class="threecal-import-form">
+                <?php wp_nonce_field( 'threecal_import_upload' ); ?>
+                <table class="form-table" role="presentation">
+                    <tr>
+                        <th scope="row"><label for="threecal_csv"><?php esc_html_e( 'CSV file', '3task-calendar' ); ?></label></th>
+                        <td>
+                            <input type="file" id="threecal_csv" name="threecal_csv" accept=".csv,text/csv" required>
+                            <p class="description">
+                                <?php
+                                /* translators: %s: maximum file size, for example "2 MB" */
+                                echo esc_html( sprintf( __( 'UTF-8, separator ; or , (found automatically), at most %s.', '3task-calendar' ), size_format( ThreeCal_Importer::MAX_BYTES ) ) );
+                                ?>
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="threecal_import_status"><?php esc_html_e( 'Status of new events', '3task-calendar' ); ?></label></th>
+                        <td>
+                            <select id="threecal_import_status" name="threecal_import_status">
+                                <option value="draft" selected><?php esc_html_e( 'Draft', '3task-calendar' ); ?></option>
+                                <option value="publish"><?php esc_html_e( 'Published', '3task-calendar' ); ?></option>
+                            </select>
+                            <p class="description"><?php esc_html_e( 'A status column in the file wins. Updated events keep their status unless the file sets one.', '3task-calendar' ); ?></p>
+                        </td>
+                    </tr>
+                </table>
+                <p>
+                    <button type="submit" name="threecal_import_preview" class="button button-primary"><?php esc_html_e( 'Show preview', '3task-calendar' ); ?></button>
+                    <a class="button" href="<?php echo esc_url( $sample_url ); ?>"><?php ThreeCal_Icons::render( 'download', 16 ); ?> <?php esc_html_e( 'Download sample file', '3task-calendar' ); ?></a>
+                </p>
+            </form>
+        </div>
+
+        <div class="threecal-card">
+            <h3><?php esc_html_e( 'Columns', '3task-calendar' ); ?></h3>
+            <p><?php esc_html_e( 'The first line holds the column names, upper or lower case does not matter. Only title and start are required.', '3task-calendar' ); ?></p>
+            <table class="widefat striped">
+                <tbody>
+                    <tr><td><code>import_key</code></td><td><?php esc_html_e( 'Your own unique key, for example festival-2027-summer. Importing a row with the same key again updates the event.', '3task-calendar' ); ?></td></tr>
+                    <tr><td><code>title</code> *</td><td><?php esc_html_e( 'Title of the event.', '3task-calendar' ); ?></td></tr>
+                    <tr><td><code>start</code> *</td><td><?php esc_html_e( 'YYYY-MM-DD, YYYY-MM-DD HH:MM, or YYYY-MM when only the month is known. Visitors then see the month and "Date to be announced".', '3task-calendar' ); ?></td></tr>
+                    <tr><td><code>end</code></td><td><?php esc_html_e( 'YYYY-MM-DD or YYYY-MM-DD HH:MM. Stays empty when only the month is known.', '3task-calendar' ); ?></td></tr>
+                    <tr><td><code>all_day</code></td><td><?php esc_html_e( '1 or 0. Empty: all day when start has no time.', '3task-calendar' ); ?></td></tr>
+                    <tr><td><code>url</code></td><td><?php esc_html_e( 'Link to more information (http or https).', '3task-calendar' ); ?></td></tr>
+                    <tr><td><code>description</code></td><td><?php esc_html_e( 'Text of the event, simple HTML is allowed.', '3task-calendar' ); ?></td></tr>
+                    <tr><td><code>category</code></td><td><?php esc_html_e( 'Name of the category, several separated by |. Missing categories are created.', '3task-calendar' ); ?></td></tr>
+                    <tr><td><code>location_name</code>, <code>address</code>, <code>postal_code</code>, <code>city</code>, <code>country</code></td><td><?php esc_html_e( 'Location. A location with the same name and city is used again, otherwise a new one is created. country is a two-letter code such as DE.', '3task-calendar' ); ?></td></tr>
+                    <tr><td><code>status</code></td><td><?php esc_html_e( 'draft, publish or cancelled. Overrides the status chosen above.', '3task-calendar' ); ?></td></tr>
+                </tbody>
+            </table>
+            <p class="description"><?php esc_html_e( 'When an event is updated, columns that are missing in the file keep their values. With WP-CLI: wp threecal import file.csv --dry-run', '3task-calendar' ); ?></p>
+        </div>
+        <?php endif; ?>
+        <?php
     }
 
     /**
