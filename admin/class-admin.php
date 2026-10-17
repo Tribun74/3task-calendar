@@ -102,6 +102,16 @@ class ThreeCal_Admin {
                 'confirm_delete_multiple' => __('Are you sure you want to delete the selected items?', '3task-calendar'),
                 'select_image' => __('Select Image', '3task-calendar'),
                 'use_image' => __('Use Image', '3task-calendar'),
+                'prefill_no_url' => __('Please enter the address first.', '3task-calendar'),
+                'prefill_wait' => __('Reading the website …', '3task-calendar'),
+                'prefill_error' => __('The website could not be read.', '3task-calendar'),
+                /* translators: %s: list of field names */
+                'prefill_done' => __('Taken from the website: %s.', '3task-calendar'),
+                'prefill_nothing_new' => __('All fields were already filled in, nothing changed.', '3task-calendar'),
+                /* translators: %s: name and address of the location */
+                'prefill_location' => __('Location on the website: %s. Add it under Locations and choose it here.', '3task-calendar'),
+                /* translators: %s: image address */
+                'prefill_image' => __('Image on the website: %s', '3task-calendar'),
                 'saving' => __('Saving...', '3task-calendar'),
                 'saved' => __('Saved!', '3task-calendar'),
                 'error' => __('An error occurred.', '3task-calendar')
@@ -288,6 +298,14 @@ class ThreeCal_Admin {
         $counts   = $this->get_tab_counts();
         $upcoming = ThreeCal_Event::get_upcoming( 5 );
         $cats     = ThreeCal_Event::get_categories_for_events( wp_list_pluck( $upcoming, 'id' ) );
+        $pending  = ThreeCal_Submit::pending_count();
+        if ( $pending ) {
+            echo '<div class="notice notice-info inline threecal-submitted-note"><p>' . esc_html( sprintf(
+                /* translators: %s: number of submitted events */
+                _n( '%s event was submitted by a visitor and waits for your check.', '%s events were submitted by visitors and wait for your check.', $pending, '3task-calendar' ),
+                number_format_i18n( $pending )
+            ) ) . ' <a href="' . esc_url( admin_url( 'admin.php?page=3task-calendar&tab=events&scope=submitted' ) ) . '">' . esc_html__( 'Show submitted events', '3task-calendar' ) . '</a></p></div>';
+        }
         $new_url  = admin_url( 'admin.php?page=3task-calendar&tab=events&action=new' );
         ?>
         <?php if ( 0 === (int) $stats['total_events'] ) : ?>
@@ -380,7 +398,7 @@ class ThreeCal_Admin {
                     <ul class="threecal-feature-chips">
                         <li><?php ThreeCal_Icons::render( 'repeat', 16 ); ?><?php esc_html_e( 'Recurring events', '3task-calendar' ); ?></li>
                         <li><?php ThreeCal_Icons::render( 'calendar-plus', 16 ); ?><?php esc_html_e( 'iCal subscription', '3task-calendar' ); ?></li>
-                        <li><?php ThreeCal_Icons::render( 'palette', 16 ); ?><?php esc_html_e( '3 designs', '3task-calendar' ); ?></li>
+                        <li><?php ThreeCal_Icons::render( 'palette', 16 ); ?><?php esc_html_e( '4 designs', '3task-calendar' ); ?></li>
                         <li><?php ThreeCal_Icons::render( 'route', 16 ); ?><?php esc_html_e( 'Route without Google', '3task-calendar' ); ?></li>
                         <li><?php ThreeCal_Icons::render( 'calendar-check', 16 ); ?><?php esc_html_e( 'Event schema (SEO)', '3task-calendar' ); ?></li>
                     </ul>
@@ -476,7 +494,7 @@ class ThreeCal_Admin {
         // List events (repetitions of a series are managed through their first event).
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display filter only.
         $scope  = isset( $_GET['scope'] ) ? sanitize_key( wp_unslash( $_GET['scope'] ) ) : 'upcoming';
-        $scope  = in_array( $scope, array( 'upcoming', 'past', 'all' ), true ) ? $scope : 'upcoming';
+        $scope  = in_array( $scope, array( 'upcoming', 'past', 'all', 'submitted' ), true ) ? $scope : 'upcoming';
         /**
          * Filters the events shown in the admin list.
          *
@@ -495,6 +513,10 @@ class ThreeCal_Admin {
             }
         }
         $events = array_values( $events );
+        $row_settings_all = array();
+        foreach ( $events as $row ) {
+            $row_settings_all[ $row->id ] = json_decode( (string) $row->settings, true );
+        }
         $cats   = ThreeCal_Event::get_categories_for_events( wp_list_pluck( $events, 'id' ) );
         $rules  = ThreeCal_Event::recurrence_options();
         $scopes = array(
@@ -502,6 +524,11 @@ class ThreeCal_Admin {
             'past'     => __( 'Past', '3task-calendar' ),
             'all'      => __( 'All', '3task-calendar' ),
         );
+        $pending_count = ThreeCal_Submit::pending_count();
+        if ( $pending_count || 'submitted' === $scope ) {
+            /* translators: %s: number of submitted events */
+            $scopes['submitted'] = sprintf( __( 'Submitted (%s)', '3task-calendar' ), number_format_i18n( $pending_count ) );
+        }
         $status_labels = array(
             'published' => __( 'Published', '3task-calendar' ),
             'draft'     => __( 'Draft', '3task-calendar' ),
@@ -563,6 +590,7 @@ class ThreeCal_Admin {
                     </span>
                     <span class="threecal-event-row-main">
                         <a class="threecal-event-row-title" href="<?php echo esc_url( $edit_url ); ?>"><?php echo esc_html( $event->title ); ?></a>
+                        <?php if ( ! empty( $row_settings_all[ $event->id ][ ThreeCal_Submit::KEY ] ) ) : ?><span class="threecal-badge threecal-badge-submitted"><?php esc_html_e( 'Submitted', '3task-calendar' ); ?></span><?php endif; ?>
                         <span class="threecal-event-row-meta">
                             <?php if ( $event->is_month_only() ) : ?>
                             <span><?php ThreeCal_Icons::render( 'calendar-question', 14 ); ?><?php echo esc_html( $event->month_label() . ' · ' . ThreeCal_Event::tba_text() ); ?></span>
@@ -626,6 +654,10 @@ class ThreeCal_Admin {
             $settings['show_event_time']          = ! empty( $_POST['show_event_time'] );
             $settings['show_event_location']      = ! empty( $_POST['show_event_location'] );
             $settings['enable_schema']            = ! empty( $_POST['enable_schema'] );
+            $settings['external_links']           = ( isset( $_POST['external_links'] ) && 'follow' === $_POST['external_links'] ) ? 'follow' : 'nofollow';
+            $settings['ics_reminder']             = isset( $_POST['ics_reminder'] ) && in_array( absint( $_POST['ics_reminder'] ), self::reminder_choices_minutes(), true ) ? absint( $_POST['ics_reminder'] ) : 0;
+            $settings['submit_category']          = isset( $_POST['submit_category'] ) ? absint( $_POST['submit_category'] ) : 0;
+            $settings['submit_notify']            = ! empty( $_POST['submit_notify'] );
             $settings['delete_data_on_uninstall'] = ! empty( $_POST['delete_data_on_uninstall'] );
 
             update_option( 'threecal_settings', $settings );
@@ -641,6 +673,10 @@ class ThreeCal_Admin {
                 'show_event_time'          => true,
                 'show_event_location'      => true,
                 'enable_schema'            => true,
+                'external_links'           => 'nofollow',
+                'ics_reminder'             => 0,
+                'submit_category'          => 0,
+                'submit_notify'            => true,
                 'delete_data_on_uninstall' => false,
             )
         );
@@ -697,6 +733,41 @@ class ThreeCal_Admin {
                         </td>
                     </tr>
                     <tr>
+                        <th scope="row"><?php esc_html_e( 'Links to other websites', '3task-calendar' ); ?></th>
+                        <td>
+                            <label><input type="radio" name="external_links" value="nofollow" <?php checked( $settings['external_links'], 'nofollow' ); ?> /> <?php esc_html_e( 'nofollow (recommended): search engines do not count them as your recommendation', '3task-calendar' ); ?></label><br>
+                            <label><input type="radio" name="external_links" value="follow" <?php checked( $settings['external_links'], 'follow' ); ?> /> <?php esc_html_e( 'follow: treat every link like your own recommendation', '3task-calendar' ); ?></label>
+                            <p class="description"><?php esc_html_e( 'Applies to the link of an event to its website. Single categories can be set to follow in the category form, for example partners that link back to you. Links open in a new window.', '3task-calendar' ); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e( 'Reminder in the calendar file', '3task-calendar' ); ?></th>
+                        <td>
+                            <select name="ics_reminder">
+                                <?php foreach ( self::reminder_choices() as $minutes => $label ) : ?>
+                                <option value="<?php echo esc_attr( $minutes ); ?>" <?php selected( (int) $settings['ics_reminder'], $minutes ); ?>><?php echo esc_html( $label ); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <p class="description"><?php esc_html_e( 'Visitors who add an event to their own calendar get this reminder from their calendar app. Nothing is stored on your website.', '3task-calendar' ); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e( 'Submitted events', '3task-calendar' ); ?></th>
+                        <td>
+                            <p><?php esc_html_e( 'Visitors can submit events through the shortcode [threecal_submit]. A submission is saved as a draft and appears nowhere until you publish it.', '3task-calendar' ); ?></p>
+                            <label><?php esc_html_e( 'Category for submitted events', '3task-calendar' ); ?>
+                                <select name="submit_category">
+                                    <option value="0"><?php esc_html_e( '— None —', '3task-calendar' ); ?></option>
+                                    <?php foreach ( ThreeCal_Category::get_all() as $cat ) : ?>
+                                    <option value="<?php echo esc_attr( $cat->id ); ?>" <?php selected( (int) $settings['submit_category'], (int) $cat->id ); ?>><?php echo esc_html( $cat->name ); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label><br>
+                            <label><input type="checkbox" name="submit_notify" value="1" <?php checked( $settings['submit_notify'] ); ?> /> <?php echo esc_html( sprintf( /* translators: %s: admin e-mail address */ __( 'E-mail %s about every submission', '3task-calendar' ), get_option( 'admin_email' ) ) ); ?></label>
+                            <p class="description"><?php esc_html_e( 'Spam protection without external services: a hidden field, a minimum time to fill the form, at most ten submissions per hour from one connection. No IP address is stored with an event.', '3task-calendar' ); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
                         <th scope="row"><?php esc_html_e( 'Uninstall', '3task-calendar' ); ?></th>
                         <td>
                             <label>
@@ -710,7 +781,98 @@ class ThreeCal_Admin {
                 <?php submit_button(); ?>
             </div>
         </form>
+
+        <?php $this->render_schema_doktor(); ?>
+        <?php $this->render_llms(); ?>
         <?php
+    }
+
+    /**
+     * JSON feed and llms.txt block for AI search engines and developers. Since 1.7.0
+     */
+    private function render_llms() {
+        $snippet = threecal()->llms_snippet();
+        ?>
+        <div class="threecal-card threecal-llms" id="threecal-llms">
+            <h3><?php esc_html_e( 'For AI search and developers: events as JSON', '3task-calendar' ); ?></h3>
+            <p><?php esc_html_e( 'Your upcoming events are available as a JSON feed, with dates and time zone, place, organizer, categories and the calendar file of every event. Pages with a calendar announce it in their head. ChatGPT, Perplexity, Google and apps can read it directly.', '3task-calendar' ); ?></p>
+            <p><code><?php echo esc_html( ThreeCal_Feed::url() ); ?></code> <a href="<?php echo esc_url( ThreeCal_Feed::url() ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Open', '3task-calendar' ); ?></a></p>
+            <p class="description"><?php esc_html_e( 'Filters: ?category=slug or ID, ?from=YYYY-MM-DD, ?to=YYYY-MM-DD, ?day=YYYY-MM-DD (one day, past allowed), ?search=word (title, description, location, city), ?limit=200 (default 50). Answers are cached for 15 minutes.', '3task-calendar' ); ?></p>
+            <h4><?php esc_html_e( 'Block for your llms.txt', '3task-calendar' ); ?></h4>
+            <p class="description"><?php esc_html_e( 'An llms.txt in the root of your website tells AI search engines what matters on your site. WordPress does not create one by itself. Paste this block into your llms.txt, or create the file with it, so the events are found.', '3task-calendar' ); ?></p>
+            <textarea class="large-text code" rows="5" readonly onclick="this.select()"><?php echo esc_textarea( $snippet ); ?></textarea>
+        </div>
+        <?php
+    }
+
+    /**
+     * Schema check: which upcoming events get event markup and why not. Since 1.7.0
+     */
+    private function render_schema_doktor() {
+        $rows   = threecal()->schema_report( 20 );
+        $labels = ThreeCal::schema_reason_labels();
+        $pages  = threecal()->calendar_pages( 5 );
+        ?>
+        <div class="threecal-card threecal-schema-doktor" id="threecal-schema-doktor">
+            <h3><?php esc_html_e( 'Schema check: what Google sees', '3task-calendar' ); ?></h3>
+            <p class="description"><?php esc_html_e( 'The event schema names the next five events that have a real place and a known day. This list shows the next 20 events, whether they get markup and why not.', '3task-calendar' ); ?></p>
+            <?php if ( ! $rows ) : ?>
+                <p><?php esc_html_e( 'No upcoming events.', '3task-calendar' ); ?></p>
+            <?php else : ?>
+            <table class="widefat striped">
+                <thead><tr><th><?php esc_html_e( 'Event', '3task-calendar' ); ?></th><th><?php esc_html_e( 'Date', '3task-calendar' ); ?></th><th><?php esc_html_e( 'Event schema', '3task-calendar' ); ?></th></tr></thead>
+                <tbody>
+                <?php foreach ( $rows as $row ) : ?>
+                    <tr>
+                        <td><a href="<?php echo esc_url( admin_url( 'admin.php?page=3task-calendar&tab=events&action=edit&event=' . (int) $row['id'] ) ); ?>"><?php echo esc_html( $row['title'] ); ?></a></td>
+                        <td><?php echo esc_html( $row['start'] ); ?></td>
+                        <td>
+                            <?php if ( $row['ok'] ) : ?>
+                                <span class="threecal-schema-ok">&#10003; <?php /* translators: %d: place 1 to 5 */ echo esc_html( sprintf( __( 'Yes, place %d of 5', '3task-calendar' ), (int) $row['place'] ) ); ?></span>
+                            <?php else : ?>
+                                <span class="threecal-schema-no">&#10007; <?php echo esc_html( implode( '; ', array_map( function ( $k ) use ( $labels ) { return isset( $labels[ $k ] ) ? $labels[ $k ] : $k; }, $row['reasons'] ) ) ); ?></span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+            <?php endif; ?>
+            <?php if ( $pages ) : ?>
+            <p><?php esc_html_e( 'Check a page with Google:', '3task-calendar' ); ?>
+                <?php foreach ( $pages as $i => $page ) : ?>
+                    <?php echo $i ? ' · ' : ''; ?><a href="<?php echo esc_url( 'https://search.google.com/test/rich-results?url=' . rawurlencode( get_permalink( $page ) ) ); ?>" target="_blank" rel="noopener"><?php echo esc_html( get_the_title( $page ) ); ?></a>
+                <?php endforeach; ?>
+            </p>
+            <p class="description"><?php esc_html_e( 'The Rich Results Test opens in a new tab and asks Google to fetch your page; nothing is sent from here.', '3task-calendar' ); ?></p>
+            <?php endif; ?>
+        </div>
+        <?php
+    }
+
+    /**
+     * Reminder choices for the calendar file: minutes before the event. Since 1.7.0
+     *
+     * @return array minutes => label
+     */
+    public static function reminder_choices() {
+        return array(
+            0    => __( 'No reminder', '3task-calendar' ),
+            30   => __( '30 minutes before', '3task-calendar' ),
+            60   => __( '1 hour before', '3task-calendar' ),
+            120  => __( '2 hours before', '3task-calendar' ),
+            1440 => __( '1 day before', '3task-calendar' ),
+            2880 => __( '2 days before', '3task-calendar' ),
+        );
+    }
+
+    /**
+     * Allowed reminder values. Since 1.7.0
+     *
+     * @return int[]
+     */
+    public static function reminder_choices_minutes() {
+        return array_keys( self::reminder_choices() );
     }
 
     /**
@@ -1161,6 +1323,13 @@ class ThreeCal_Admin {
                     $month_like
                 )
             );
+        } elseif ( 'submitted' === $scope ) {
+            $results = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT * FROM {$wpdb->prefix}threecal_events WHERE (parent_id IS NULL OR parent_id = 0) AND status = 'draft' AND settings LIKE %s ORDER BY start_date ASC",
+                    '%"' . ThreeCal_Submit::KEY . '":%'
+                )
+            );
         } else {
             $results = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}threecal_events WHERE parent_id IS NULL OR parent_id = 0 ORDER BY start_date ASC" );
         }
@@ -1279,6 +1448,10 @@ class ThreeCal_Admin {
             'events_per_page'          => max(1, absint($input['events_per_page'] ?? 10)),
             'enable_event_popup'       => isset($input['enable_event_popup']) ? !empty($input['enable_event_popup']) : true,
             'enable_schema'            => isset($input['enable_schema']) ? !empty($input['enable_schema']) : true,
+            'external_links'           => (isset($input['external_links']) && 'follow' === $input['external_links']) ? 'follow' : 'nofollow',
+            'ics_reminder'             => isset($input['ics_reminder']) && in_array(absint($input['ics_reminder']), self::reminder_choices_minutes(), true) ? absint($input['ics_reminder']) : 0,
+            'submit_category'          => absint($input['submit_category'] ?? 0),
+            'submit_notify'            => isset($input['submit_notify']) ? !empty($input['submit_notify']) : true,
             'delete_data_on_uninstall' => !empty($input['delete_data_on_uninstall']),
         );
 
@@ -1391,6 +1564,10 @@ class ThreeCal_Admin {
         $event->featured_image = isset( $_POST['event_featured_image'] ) ? absint( $_POST['event_featured_image'] ) : 0;
         $event->color          = isset( $_POST['event_color'] ) ? ( sanitize_hex_color( wp_unslash( $_POST['event_color'] ) ) ?: '#3788d8' ) : '#3788d8';
         $event->status         = isset( $_POST['event_status'] ) ? sanitize_key( wp_unslash( $_POST['event_status'] ) ) : 'published';
+        $event->set_organizer(
+            isset( $_POST['event_organizer_name'] ) ? sanitize_text_field( wp_unslash( $_POST['event_organizer_name'] ) ) : '',
+            isset( $_POST['event_organizer_url'] ) ? esc_url_raw( wp_unslash( $_POST['event_organizer_url'] ), array( 'http', 'https' ) ) : ''
+        );
 
         if ( ! in_array( $event->status, array( 'draft', 'published', 'cancelled' ), true ) ) {
             $event->status = 'draft';
@@ -1720,6 +1897,10 @@ class ThreeCal_Admin {
         if ( $category->save() ) {
             // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in handle_form_submissions.
             ThreeCal_Category::set_schema_excluded( $category->id, ! empty( $_POST['category_no_schema'] ) );
+            // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in handle_form_submissions.
+            ThreeCal_Category::set_highlighted( $category->id, ! empty( $_POST['category_highlight'] ) );
+            // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in handle_form_submissions.
+            ThreeCal_Category::set_follow( $category->id, ! empty( $_POST['category_follow'] ) );
             wp_safe_redirect( add_query_arg( array(
                 'page'    => '3task-calendar',
                 'tab'     => 'categories',
@@ -2069,6 +2250,7 @@ class ThreeCal_Admin {
                     <tr><td><code>category</code></td><td><?php esc_html_e( 'Name of the category, several separated by |. Missing categories are created.', '3task-calendar' ); ?></td></tr>
                     <tr><td><code>location_name</code>, <code>address</code>, <code>postal_code</code>, <code>city</code>, <code>country</code></td><td><?php esc_html_e( 'Location. A location with the same name and city is used again, otherwise a new one is created. country is a two-letter code such as DE.', '3task-calendar' ); ?></td></tr>
                     <tr><td><code>status</code></td><td><?php esc_html_e( 'draft, publish or cancelled. Overrides the status chosen above.', '3task-calendar' ); ?></td></tr>
+                    <tr><td><code>organizer_name</code>, <code>organizer_url</code></td><td><?php esc_html_e( 'Who runs the event and their website (http or https). Search engines show it as the organizer. Leave empty if you only list the event.', '3task-calendar' ); ?></td></tr>
                 </tbody>
             </table>
             <p class="description"><?php esc_html_e( 'When an event is updated, columns that are missing in the file keep their values. With WP-CLI: wp threecal import file.csv --dry-run', '3task-calendar' ); ?></p>

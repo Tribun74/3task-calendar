@@ -65,6 +65,183 @@ class ThreeCal_Calendar_Renderer {
     }
 
     /**
+     * Attributes of the link to an event's URL, filterable per event.
+     *
+     * @since 1.6.3
+     *
+     * @param ThreeCal_Event $event   The event.
+     * @param string         $context Where the link is printed: card, poster, single, upcoming.
+     * @param array          $attrs   Attributes the template already sets (class, target, rel ...).
+     * @return string Escaped HTML attributes, href included.
+     */
+    public static function link_attributes($event, $context, $attrs = array()) {
+        $attrs = array_merge($attrs, array('href' => $event->url));
+        $attrs = self::apply_link_rule($attrs, $event);
+        /**
+         * Filters the attributes of the link to an event's URL.
+         *
+         * Return for example rel => 'nofollow noopener' and target => '_blank' for
+         * events of other organisers. Since 1.6.3
+         *
+         * @param array          $attrs   Attributes (href, class, target, rel ...).
+         * @param ThreeCal_Event $event   The event.
+         * @param string         $context card, poster, single, upcoming or details.
+         */
+        $attrs = apply_filters('threecal_event_link_attributes', $attrs, $event, $context);
+        $out = array();
+        foreach ((array) $attrs as $name => $value) {
+            if (!preg_match('/^[a-z][a-z0-9-]*$/', (string) $name) || null === $value || false === $value) {
+                continue;
+            }
+            $out[] = esc_attr($name) . '="' . ('href' === $name ? esc_url($value) : esc_attr($value)) . '"';
+        }
+        return implode(' ', $out);
+    }
+
+    /**
+     * Link rule for links to other websites (since 1.7.0).
+     *
+     * Links to the own site stay as they are. Other links open in a new window and are
+     * nofollow, unless the setting "Links to other websites" says follow or one of the
+     * event's categories is marked as follow.
+     *
+     * @param array          $attrs Attributes with href.
+     * @param ThreeCal_Event $event The event.
+     * @return array
+     */
+    public static function apply_link_rule($attrs, $event) {
+        $href = isset($attrs['href']) ? (string) $attrs['href'] : '';
+        $host = wp_parse_url($href, PHP_URL_HOST);
+        if (!$host) {
+            return $attrs;
+        }
+        $own = (string) wp_parse_url(home_url('/'), PHP_URL_HOST);
+        if (0 === strcasecmp(preg_replace('/^www\./i', '', $host), preg_replace('/^www\./i', '', $own))) {
+            return $attrs;
+        }
+        $settings = get_option('threecal_settings', array());
+        $follow   = isset($settings['external_links']) && 'follow' === $settings['external_links'];
+        if (!$follow && !empty($event->id)) {
+            $follow_ids = ThreeCal_Category::follow_ids();
+            if ($follow_ids) {
+                foreach ((array) ThreeCal_Event::get_categories($event->id) as $cat) {
+                    if (in_array((int) $cat->id, $follow_ids, true)) {
+                        $follow = true;
+                        break;
+                    }
+                }
+            }
+        }
+        $rel = isset($attrs['rel']) ? preg_split('/\s+/', trim((string) $attrs['rel'])) : array();
+        $rel = array_values(array_diff($rel, array('nofollow', 'noopener')));
+        if (!$follow) {
+            $rel[] = 'nofollow';
+        }
+        $rel[]           = 'noopener';
+        $attrs['rel']    = implode(' ', $rel);
+        $attrs['target'] = '_blank';
+        return $attrs;
+    }
+
+    /**
+     * Highlighted category of an event (first match), null if none. Since 1.7.0
+     *
+     * @param array $categories Category rows of the event.
+     * @return object|null
+     */
+    public static function highlight_category($categories) {
+        $ids = ThreeCal_Category::highlighted_ids();
+        if (!$ids) {
+            return null;
+        }
+        foreach ((array) $categories as $cat) {
+            if (in_array((int) $cat->id, $ids, true)) {
+                return $cat;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Badge of a highlighted event: star and name of the category. Since 1.7.0
+     *
+     * @param array $categories Category rows of the event.
+     * @return string Escaped HTML or empty string.
+     */
+    public static function highlight_badge($categories) {
+        $cat = self::highlight_category($categories);
+        if (!$cat) {
+            return '';
+        }
+        ob_start();
+        ThreeCal_Icons::render('star', 12);
+        $icon = ob_get_clean();
+        return '<span class="threecal-highlight-badge" style="' . esc_attr(ThreeCal_Themes::event_style(sanitize_hex_color((string) $cat->color))) . '">' . $icon . esc_html($cat->name) . '</span>';
+    }
+
+    /**
+     * Classes of an event card, filterable per event.
+     *
+     * @since 1.6.3
+     *
+     * @param array          $classes    Classes the template sets.
+     * @param ThreeCal_Event $event      The event.
+     * @param string         $view       list, compact, poster.
+     * @param array          $categories Category rows of the event (since 1.7.0, for the highlight class).
+     * @return string Escaped class attribute value.
+     */
+    public static function card_classes($classes, $event, $view, $categories = array()) {
+        if (self::highlight_category($categories)) {
+            $classes[] = 'threecal-is-highlight';
+        }
+        /**
+         * Filters the CSS classes of an event card. Since 1.6.3
+         *
+         * @param array          $classes Classes.
+         * @param ThreeCal_Event $event   The event.
+         * @param string         $view    list, compact, poster.
+         */
+        $classes = apply_filters('threecal_event_card_classes', array_values(array_filter((array) $classes)), $event, $view);
+        return esc_attr(implode(' ', array_unique(array_map('sanitize_html_class', (array) $classes))));
+    }
+
+    /**
+     * Search field (since 1.8.0).
+     *
+     * In the calendar the field is handled by JavaScript (same public request as the month
+     * navigation). In the event list it is a plain GET form, so it works without JavaScript
+     * and page caches keep working: every search term is its own address.
+     *
+     * @param array $args id (prefix for the field id), value (current term), param (query
+     *                    parameter), method ('get' for a real form, '' for the calendar),
+     *                    action (URL of the form), keep (query parameters to carry along).
+     * @return string
+     */
+    public static function render_search_form($args = array()) {
+        $args = wp_parse_args($args, array(
+            'id' => 'threecal-' . wp_rand(1000, 9999),
+            'value' => '',
+            'param' => 'tc_q',
+            'method' => '',
+            'action' => '',
+            'keep' => array(),
+        ));
+        $field_id = $args['id'] . '-search';
+        $out = '<form class="threecal-search" role="search"' . ('' !== $args['method'] ? ' method="' . esc_attr($args['method']) . '" action="' . esc_url($args['action']) . '"' : '') . '>';
+        foreach ((array) $args['keep'] as $key => $value) {
+            if (!is_scalar($value)) {
+                continue;
+            }
+            $out .= '<input type="hidden" name="' . esc_attr(sanitize_key($key)) . '" value="' . esc_attr(sanitize_text_field((string) $value)) . '">';
+        }
+        $out .= '<label class="screen-reader-text threecal-search-label" for="' . esc_attr($field_id) . '">' . esc_html__('Search events', '3task-calendar') . '</label>';
+        $out .= '<input type="search" id="' . esc_attr($field_id) . '" class="threecal-search-input" name="' . esc_attr(sanitize_key($args['param'])) . '" value="' . esc_attr($args['value']) . '" placeholder="' . esc_attr__('Search events', '3task-calendar') . '" maxlength="' . (int) ThreeCal_Event::SEARCH_MAX_LENGTH . '" autocomplete="off" enterkeyhint="search">';
+        $out .= '<button type="submit" class="threecal-search-btn" aria-label="' . esc_attr__('Search', '3task-calendar') . '" title="' . esc_attr__('Search', '3task-calendar') . '">' . ThreeCal_Icons::svg('search', 16) . '</button>';
+        $out .= '</form>';
+        return $out;
+    }
+
+    /**
      * Render full calendar
      */
     public function render_calendar($args = array()) {
@@ -76,6 +253,8 @@ class ThreeCal_Calendar_Renderer {
             'show_filters' => true,
             'show_legend' => true,
             'show_subscribe' => true,
+            'show_print' => true,
+            'show_search' => true,
             'mobile_list' => true,
             'week_starts_on' => null
         );
@@ -149,11 +328,19 @@ class ThreeCal_Calendar_Renderer {
                             <span><?php esc_html_e('List', '3task-calendar'); ?></span>
                         </button>
                     </div>
+                    <?php if ($args['show_print']) : ?>
+                    <button type="button" class="threecal-print-btn" aria-label="<?php esc_attr_e('Print this month', '3task-calendar'); ?>" title="<?php esc_attr_e('Print this month', '3task-calendar'); ?>">
+                        <?php ThreeCal_Icons::render('printer', 16); ?>
+                    </button>
+                    <?php endif; ?>
                 </div>
             </div>
+            <div class="threecal-announce screen-reader-text" role="status" aria-live="polite"></div>
 
-            <?php if ($args['show_filters'] && count($categories) > 1) : ?>
+            <?php $show_filter = $args['show_filters'] && count($categories) > 1; ?>
+            <?php if ($show_filter || $args['show_search']) : ?>
             <div class="threecal-filters">
+                <?php if ($show_filter) : ?>
                 <label class="screen-reader-text" for="<?php echo esc_attr($calendar_id); ?>-filter"><?php esc_html_e('Filter by category', '3task-calendar'); ?></label>
                 <select id="<?php echo esc_attr($calendar_id); ?>-filter" class="threecal-category-filter">
                     <option value="0"><?php esc_html_e('All Categories', '3task-calendar'); ?></option>
@@ -163,6 +350,10 @@ class ThreeCal_Calendar_Renderer {
                     </option>
                     <?php endforeach; ?>
                 </select>
+                <?php endif; ?>
+                <?php if ($args['show_search']) : ?>
+                <?php echo self::render_search_form(array('id' => $calendar_id)); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in render_search_form(). Since 1.8.0, next to the category filter. ?>
+                <?php endif; ?>
             </div>
             <?php endif; ?>
 
@@ -171,6 +362,13 @@ class ThreeCal_Calendar_Renderer {
                 // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped within render_month_view method
                 echo $this->render_month_view( $month, $year, $args );
                 ?>
+            </div>
+            <div class="threecal-results" hidden>
+                <div class="threecal-results-head">
+                    <h3 class="threecal-results-title" tabindex="-1"></h3>
+                    <button type="button" class="threecal-results-reset"><?php ThreeCal_Icons::render('x', 16); ?><span><?php esc_html_e('All events', '3task-calendar'); ?></span></button>
+                </div>
+                <div class="threecal-results-body"></div>
             </div>
 
             <?php if (($args['show_legend'] && !empty($categories)) || $args['show_subscribe']) : ?>
@@ -324,7 +522,7 @@ class ThreeCal_Calendar_Renderer {
                             <td class="threecal-day<?php echo esc_attr($weekend); ?><?php echo $is_today ? ' threecal-is-today' : ''; ?><?php echo $has_events ? ' threecal-has-events' : ''; ?>"
                                 data-date="<?php echo esc_attr($current_date); ?>">
                                 <div class="threecal-day-header">
-                                    <span class="threecal-day-number"<?php echo $is_today ? ' aria-current="date"' : ''; ?>><?php echo esc_html($day); ?></span>
+                                    <button type="button" class="threecal-day-number" data-date="<?php echo esc_attr($current_date); ?>"<?php echo $is_today ? ' aria-current="date"' : ''; ?> aria-label="<?php echo esc_attr(sprintf(/* translators: %s: date */ __('Events on %s', '3task-calendar'), date_i18n(ThreeCal::day_heading_format(), strtotime($current_date . ' 12:00:00')))); ?>"><?php echo esc_html($day); ?></button>
                                 </div>
                                 <?php if ($has_events) : ?>
                                 <div class="threecal-day-events">
@@ -345,7 +543,7 @@ class ThreeCal_Calendar_Renderer {
                                     </a>
                                     <?php endforeach; ?>
                                     <?php if (count($day_events) > 3) : ?>
-                                    <a href="#" class="threecal-more-events" data-date="<?php echo esc_attr($current_date); ?>" aria-expanded="false">
+                                    <a href="#" class="threecal-more-events" data-date="<?php echo esc_attr($current_date); ?>">
                                         +<?php echo esc_html(count($day_events) - 3); ?> <?php esc_html_e('more', '3task-calendar'); ?>
                                     </a>
                                     <?php endif; ?>
@@ -376,7 +574,13 @@ class ThreeCal_Calendar_Renderer {
             'total' => 0,
             'per_page' => 10,
             'current_page' => 1,
-            'page_param' => 'tc_page'
+            'page_param' => 'tc_page',
+            // Search in the event list (since 1.8.0): the form above the list, the current term,
+            // the address without the term, and whether the cards are grouped by day.
+            'search_form' => '',
+            'search_term' => '',
+            'reset_url' => '',
+            'group_days' => false,
         );
 
         $args = wp_parse_args($args, $defaults);
@@ -385,18 +589,62 @@ class ThreeCal_Calendar_Renderer {
         $args['columns'] = min(6, max(1, (int) $args['columns']));
         ThreeCal_Themes::enqueue($args['theme']);
 
-        if (empty($events)) {
+        $searching = '' !== (string) $args['search_term'];
+
+        if (empty($events) && !$searching && '' === $args['search_form']) {
             return '<p class="threecal-no-events threecal-theme-' . esc_attr($args['theme']) . '">' . esc_html__('No events found.', '3task-calendar') . '</p>';
         }
 
-        $categories = ThreeCal_Event::get_categories_for_events(wp_list_pluck($events, 'id'));
+        $categories = $events ? ThreeCal_Event::get_categories_for_events(wp_list_pluck($events, 'id')) : array();
+        $cards_class = 'threecal-cards' . ($args['view'] === 'grid' ? ' threecal-grid threecal-grid-' . $args['columns'] : '') . ($args['view'] === 'poster' ? ' threecal-poster-grid' : '');
+        $cards_style = $args['view'] === 'poster' ? ' style="--tc-cols:' . esc_attr($args['columns']) . ';"' : '';
+
+        // Cards grouped by day when wanted: one group per day (or per month for month-only dates).
+        $groups = array();
+        foreach ((array) $events as $event) {
+            $key = 'all';
+            if ($args['group_days']) {
+                $key = $event->is_month_only() ? 'm' . substr((string) $event->start_date, 0, 7) : 'd' . substr((string) $event->start_date, 0, 10);
+            }
+            if (!isset($groups[$key])) {
+                $groups[$key] = array(
+                    'title' => $args['group_days'] ? ($event->is_month_only() ? $event->month_label() : date_i18n(ThreeCal::day_heading_format(), strtotime($event->start_date))) : '',
+                    'events' => array(),
+                );
+            }
+            $groups[$key]['events'][] = $event;
+        }
 
         ob_start();
         ?>
-        <div class="threecal-event-list threecal-view-<?php echo esc_attr($args['view']); ?> threecal-theme-<?php echo esc_attr($args['theme']); ?>"
+        <div class="threecal-event-list threecal-view-<?php echo esc_attr($args['view']); ?> threecal-theme-<?php echo esc_attr($args['theme']); ?><?php echo $searching ? ' threecal-is-searching' : ''; ?>"
              style="<?php echo esc_attr(ThreeCal_Themes::wrapper_style($args['theme'])); ?>">
-            <div class="threecal-cards<?php echo $args['view'] === 'grid' ? ' threecal-grid threecal-grid-' . esc_attr($args['columns']) : ''; ?><?php echo $args['view'] === 'poster' ? ' threecal-poster-grid' : ''; ?>"<?php echo $args['view'] === 'poster' ? ' style="--tc-cols:' . esc_attr($args['columns']) . ';"' : ''; ?>>
-                <?php foreach ( $events as $event ) : ?>
+            <?php echo $args['search_form']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in render_search_form(). ?>
+            <?php if ($searching) : ?>
+            <p class="threecal-search-summary" role="status">
+                <span class="threecal-search-summary-text">
+                    <?php
+                    if (empty($events)) {
+                        /* translators: %s: search term */
+                        echo esc_html(sprintf(__('No events for “%s”.', '3task-calendar'), $args['search_term']));
+                    } else {
+                        /* translators: 1: number of events, 2: search term */
+                        echo esc_html(sprintf(_n('%1$s event for “%2$s”', '%1$s events for “%2$s”', (int) max((int) $args['total'], count($events)), '3task-calendar'), number_format_i18n(max((int) $args['total'], count($events))), $args['search_term']));
+                    }
+                    ?>
+                </span>
+                <a class="threecal-search-reset" href="<?php echo esc_url($args['reset_url']); ?>"><?php ThreeCal_Icons::render('x', 14); ?><?php esc_html_e('Reset search', '3task-calendar'); ?></a>
+            </p>
+            <?php elseif (empty($events)) : ?>
+            <p class="threecal-no-events"><?php esc_html_e('No events found.', '3task-calendar'); ?></p>
+            <?php endif; ?>
+            <?php foreach ($groups as $group) : ?>
+            <?php if ('' !== $group['title']) : ?>
+            <div class="threecal-list-group">
+                <h3 class="threecal-list-group-title"><?php echo esc_html($group['title']); ?></h3>
+            <?php endif; ?>
+            <div class="<?php echo esc_attr($cards_class); ?>"<?php echo $cards_style; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped above. ?>>
+                <?php foreach ( $group['events'] as $event ) : ?>
                     <?php
                     $event_cats = isset( $categories[ $event->id ] ) ? $categories[ $event->id ] : array();
                     // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped within the card methods.
@@ -404,6 +652,10 @@ class ThreeCal_Calendar_Renderer {
                     ?>
                 <?php endforeach; ?>
             </div>
+            <?php if ('' !== $group['title']) : ?>
+            </div>
+            <?php endif; ?>
+            <?php endforeach; ?>
 
             <?php if ( $args['show_pagination'] && $args['total'] > $args['per_page'] ) : ?>
             <div class="threecal-pagination">
@@ -443,9 +695,9 @@ class ThreeCal_Calendar_Renderer {
 
         ob_start();
         ?>
-        <article class="threecal-poster-card<?php echo $cancelled ? ' threecal-is-cancelled' : ''; ?>" style="<?php echo esc_attr(ThreeCal_Themes::event_style($color)); ?>">
+        <article class="<?php echo self::card_classes(array('threecal-poster-card', $cancelled ? 'threecal-is-cancelled' : ''), $event, 'poster', $categories); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in card_classes(). ?>" style="<?php echo esc_attr(ThreeCal_Themes::event_style($color)); ?>">
             <?php if ($link) : ?>
-            <a class="threecal-poster-media" href="<?php echo esc_url($link); ?>" tabindex="-1" aria-hidden="true">
+            <a <?php echo self::link_attributes($event, 'poster', array('class' => 'threecal-poster-media', 'tabindex' => '-1', 'aria-hidden' => 'true')); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in link_attributes(). ?>>
             <?php else : ?>
             <div class="threecal-poster-media">
             <?php endif; ?>
@@ -468,10 +720,11 @@ class ThreeCal_Calendar_Renderer {
             <?php echo $link ? '</a>' : '</div>'; ?>
 
             <div class="threecal-poster-body">
+                <?php echo self::highlight_badge($categories); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in highlight_badge(). ?>
                 <h3 class="threecal-poster-title">
                     <?php echo self::cancelled_badge($event); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in cancelled_badge(). ?>
                     <?php if ($link) : ?>
-                    <a href="<?php echo esc_url($link); ?>"><?php echo esc_html($event->title); ?></a>
+                    <a <?php echo self::link_attributes($event, 'poster'); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in link_attributes(). ?>><?php echo esc_html($event->title); ?></a>
                     <?php else : ?>
                     <?php echo esc_html($event->title); ?>
                     <?php endif; ?>
@@ -508,7 +761,7 @@ class ThreeCal_Calendar_Renderer {
 
         ob_start();
         ?>
-        <article class="threecal-event-card<?php echo 'cancelled' === $event->status ? ' threecal-is-cancelled' : ''; ?><?php echo $month_only ? ' threecal-is-tba' : ''; ?>" data-event-id="<?php echo esc_attr($event->id); ?>" style="<?php echo esc_attr(ThreeCal_Themes::event_style($color)); ?>">
+        <article class="<?php echo self::card_classes(array('threecal-event-card', 'cancelled' === $event->status ? 'threecal-is-cancelled' : '', $month_only ? 'threecal-is-tba' : ''), $event, $view, $categories); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in card_classes(). ?>" data-event-id="<?php echo esc_attr($event->id); ?>" style="<?php echo esc_attr(ThreeCal_Themes::event_style($color)); ?>">
             <?php if ($month_only) : ?>
             <div class="threecal-date-badge threecal-date-badge-tba" aria-hidden="true">
                 <span class="threecal-date-badge-month"><?php echo esc_html(date_i18n('M', $start)); ?></span>
@@ -529,6 +782,7 @@ class ThreeCal_Calendar_Renderer {
                 </div>
                 <?php endif; ?>
 
+                <?php echo self::highlight_badge($categories); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in highlight_badge(). ?>
                 <?php if (!empty($categories) && 'compact' !== $view) : ?>
                 <div class="threecal-event-categories">
                     <?php foreach ($categories as $cat) : ?>
@@ -540,7 +794,7 @@ class ThreeCal_Calendar_Renderer {
                 <h3 class="threecal-event-title">
                     <?php echo self::cancelled_badge($event); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in cancelled_badge(). ?>
                     <?php if ($event->url) : ?>
-                    <a href="<?php echo esc_url($event->url); ?>"><?php echo esc_html($event->title); ?></a>
+                    <a <?php echo self::link_attributes($event, 'card'); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in link_attributes(). ?>><?php echo esc_html($event->title); ?></a>
                     <?php else : ?>
                     <?php echo esc_html($event->title); ?>
                     <?php endif; ?>
@@ -710,7 +964,7 @@ class ThreeCal_Calendar_Renderer {
                 </a>
                 <?php endif; ?>
                 <?php if ($event->url) : ?>
-                <a class="threecal-button threecal-button-ghost" href="<?php echo esc_url($event->url); ?>" target="_blank" rel="noopener">
+                <a <?php echo self::link_attributes($event, 'single', array('class' => 'threecal-button threecal-button-ghost', 'target' => '_blank', 'rel' => 'noopener')); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in link_attributes(). ?>>
                     <?php ThreeCal_Icons::render('external-link', 18); ?>
                     <?php esc_html_e('More Information', '3task-calendar'); ?>
                 </a>
@@ -761,7 +1015,7 @@ class ThreeCal_Calendar_Renderer {
                 </div>
                 <?php endif; ?>
                 <div class="threecal-upcoming-content">
-                    <span class="threecal-upcoming-title"><?php echo self::cancelled_badge($event); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in cancelled_badge(). ?><?php if ($event->url) : ?><a href="<?php echo esc_url($event->url); ?>"><?php echo esc_html($event->title); ?></a><?php else : ?><?php echo esc_html($event->title); ?><?php endif; ?></span>
+                    <span class="threecal-upcoming-title"><?php echo self::cancelled_badge($event); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in cancelled_badge(). ?><?php if ($event->url) : ?><a <?php echo self::link_attributes($event, 'upcoming'); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in link_attributes(). ?>><?php echo esc_html($event->title); ?></a><?php else : ?><?php echo esc_html($event->title); ?><?php endif; ?></span>
 
                     <?php if ($args['show_date']) : ?>
                     <span class="threecal-upcoming-date">

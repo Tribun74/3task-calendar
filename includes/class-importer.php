@@ -86,7 +86,7 @@ class ThreeCal_Importer {
 	 * @return string[]
 	 */
 	public static function columns() {
-		return array( 'import_key', 'title', 'start', 'end', 'all_day', 'url', 'description', 'category', 'location_name', 'address', 'postal_code', 'city', 'country', 'status' );
+		return array( 'import_key', 'title', 'start', 'end', 'all_day', 'url', 'description', 'category', 'location_name', 'address', 'postal_code', 'city', 'country', 'status', 'organizer_name', 'organizer_url' );
 	}
 
 	/* ---------------------------------------------------------------------
@@ -357,6 +357,14 @@ class ThreeCal_Importer {
 			}
 		}
 
+		$organizer_url = $get( 'organizer_url' );
+		if ( '' !== $organizer_url ) {
+			$organizer_url = esc_url_raw( $organizer_url, array( 'http', 'https' ) );
+			if ( '' === $organizer_url ) {
+				return new WP_Error( 'organizer_url', __( 'organizer_url must start with http:// or https://.', '3task-calendar' ) );
+			}
+		}
+
 		$status_raw = strtolower( $get( 'status' ) );
 		$status     = '';
 		if ( '' !== $status_raw ) {
@@ -391,12 +399,13 @@ class ThreeCal_Importer {
 
 		// Lengths of the database columns.
 		$limits = array(
-			'title'         => 255,
-			'url'           => 500,
-			'location_name' => 255,
-			'address'       => 500,
-			'postal_code'   => 20,
-			'city'          => 100,
+			'title'          => 255,
+			'url'            => 500,
+			'location_name'  => 255,
+			'organizer_name' => 255,
+			'address'        => 500,
+			'postal_code'    => 20,
+			'city'           => 100,
 		);
 		foreach ( $limits as $column => $limit ) {
 			$value = 'title' === $column ? $title : ( 'url' === $column ? $url : sanitize_text_field( $get( $column ) ) );
@@ -413,21 +422,23 @@ class ThreeCal_Importer {
 		}
 
 		return array(
-			'import_key'    => $key,
-			'title'         => $title,
-			'precision'     => $precision,
-			'start'         => $start,
-			'end'           => $end,
-			'all_day'       => (bool) $all_day,
-			'url'           => $url,
-			'description'   => wp_kses_post( $get( 'description' ) ),
-			'categories'    => array_values( $categories ),
-			'location_name' => sanitize_text_field( $get( 'location_name' ) ),
-			'address'       => sanitize_text_field( $get( 'address' ) ),
-			'postal_code'   => sanitize_text_field( $get( 'postal_code' ) ),
-			'city'          => sanitize_text_field( $get( 'city' ) ),
-			'country'       => $country,
-			'status'        => $status,
+			'import_key'     => $key,
+			'title'          => $title,
+			'precision'      => $precision,
+			'start'          => $start,
+			'end'            => $end,
+			'all_day'        => (bool) $all_day,
+			'url'            => $url,
+			'description'    => wp_kses_post( $get( 'description' ) ),
+			'categories'     => array_values( $categories ),
+			'location_name'  => sanitize_text_field( $get( 'location_name' ) ),
+			'address'        => sanitize_text_field( $get( 'address' ) ),
+			'postal_code'    => sanitize_text_field( $get( 'postal_code' ) ),
+			'city'           => sanitize_text_field( $get( 'city' ) ),
+			'country'        => $country,
+			'status'         => $status,
+			'organizer_name' => sanitize_text_field( $get( 'organizer_name' ) ),
+			'organizer_url'  => $organizer_url,
 		);
 	}
 
@@ -543,6 +554,11 @@ class ThreeCal_Importer {
 			if ( $new || isset( $columns['location_name'] ) ) {
 				$event->location_id = $this->location_id( $data, $result );
 			}
+			$organizer = $event->get_organizer();
+			$event->set_organizer(
+				isset( $columns['organizer_name'] ) ? $data['organizer_name'] : $organizer['name'],
+				isset( $columns['organizer_url'] ) ? $data['organizer_url'] : $organizer['url']
+			);
 			if ( '' !== $data['import_key'] ) {
 				$event->set_setting( ThreeCal_Event::IMPORT_KEY, $data['import_key'] );
 			}
@@ -707,9 +723,9 @@ class ThreeCal_Importer {
 	public static function sample_csv() {
 		$rows = array(
 			self::columns(),
-			array( 'festival-2027-summer', 'Summer Film Festival', '2027-07', '', '', 'https://example.com/festival', 'Programme to follow.', 'Festival|Open air', 'Riverside Park', 'Park Road 1', '56626', 'Andernach', 'DE', '' ),
-			array( 'premiere-2027-05-14', 'Premiere at the cinema', '2027-05-14 20:00', '2027-05-14 22:30', '0', '', 'With guests from the film.', 'Premiere', 'City Cinema', 'Main Street 5', '56626', 'Andernach', 'DE', 'publish' ),
-			array( 'market-2027-06-05', 'Book market', '2027-06-05', '2027-06-06', '1', '', '', 'Market', 'Market Square', '', '56626', 'Andernach', 'DE', '' ),
+			array( 'festival-2027-summer', 'Summer Film Festival', '2027-07', '', '', 'https://example.com/festival', 'Programme to follow.', 'Festival|Open air', 'Riverside Park', 'Park Road 1', '56626', 'Andernach', 'DE', '', 'Riverside Film Club', 'https://example.com/film-club' ),
+			array( 'premiere-2027-05-14', 'Premiere at the cinema', '2027-05-14 20:00', '2027-05-14 22:30', '0', '', 'With guests from the film.', 'Premiere', 'City Cinema', 'Main Street 5', '56626', 'Andernach', 'DE', 'publish', '', '' ),
+			array( 'market-2027-06-05', 'Book market', '2027-06-05', '2027-06-06', '1', '', '', 'Market', 'Market Square', '', '56626', 'Andernach', 'DE', '', '', '' ),
 		);
 
 		$handle = fopen( 'php://temp', 'r+' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- In-memory stream for fputcsv().

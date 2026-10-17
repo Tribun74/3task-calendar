@@ -93,6 +93,21 @@ class ThreeCal_Public {
                 'list_date' => __('{month} {day}', '3task-calendar'),
                 'cancelled' => __('Cancelled', '3task-calendar'),
                 'month_tba' => __('This month, date to be announced', '3task-calendar'),
+                // Search and day filter (since 1.8.0)
+                'reset_search' => __('Reset search', '3task-calendar'),
+                'all_events' => __('All events', '3task-calendar'),
+                /* translators: {date} is replaced with the date, for example "Friday, October 24, 2026". */
+                'events_on' => __('Events on {date}', '3task-calendar'),
+                /* translators: {date} is replaced with the date. */
+                'no_events_on' => __('No events on {date}', '3task-calendar'),
+                /* translators: {term} is replaced with the search term. */
+                'no_events_for' => __('No events for “{term}”', '3task-calendar'),
+                /* translators: {term} is replaced with the search term. */
+                'one_event_for' => __('One event for “{term}”', '3task-calendar'),
+                /* translators: {count} is the number of events, {term} the search term. */
+                'events_for' => __('{count} events for “{term}”', '3task-calendar'),
+                /* translators: Date with year in headings of search results and day lists. Keep {day}, {month} and {year}, they are replaced with the day number, the month name and the year. */
+                'list_date_year' => __('{month} {day}, {year}', '3task-calendar'),
                 'months' => array(
                     __('January', '3task-calendar'),
                     __('February', '3task-calendar'),

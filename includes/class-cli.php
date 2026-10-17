@@ -22,7 +22,8 @@ class ThreeCal_CLI {
 	 *
 	 * Columns (header line, not case-sensitive): import_key, title, start,
 	 * end, all_day, url, description, category, location_name, address,
-	 * postal_code, city, country, status. title and start are required.
+	 * postal_code, city, country, status, organizer_name, organizer_url.
+	 * title and start are required.
 	 * start is YYYY-MM-DD, YYYY-MM-DD HH:MM or YYYY-MM (only the month known).
 	 * A row whose import_key already exists updates that event.
 	 *

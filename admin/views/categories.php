@@ -100,6 +100,22 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( wp_unslash( $_GET['m
                         <p class="description"><?php esc_html_e( 'For office hours, holidays or release dates. Google does not allow these as event markup. The dates still appear in the calendar.', '3task-calendar' ); ?></p>
                     </div>
 
+                    <div class="threecal-field">
+                        <label class="threecal-checkbox-label">
+                            <input type="checkbox" name="category_highlight" value="1" <?php checked( $editing && in_array( (int) $editing->id, ThreeCal_Category::highlighted_ids(), true ) ); ?>>
+                            <?php esc_html_e( 'Highlight events of this category', '3task-calendar' ); ?>
+                        </label>
+                        <p class="description"><?php esc_html_e( 'Cards get a frame in the category color and a badge with the category name, for example for partners or your own events.', '3task-calendar' ); ?></p>
+                    </div>
+
+                    <div class="threecal-field">
+                        <label class="threecal-checkbox-label">
+                            <input type="checkbox" name="category_follow" value="1" <?php checked( $editing && in_array( (int) $editing->id, ThreeCal_Category::follow_ids(), true ) ); ?>>
+                            <?php esc_html_e( 'Links of these events are follow links', '3task-calendar' ); ?>
+                        </label>
+                        <p class="description"><?php esc_html_e( 'Links to other websites are nofollow by default (see Settings). Tick this for categories whose websites you want to recommend to search engines, for example partners that link back to you.', '3task-calendar' ); ?></p>
+                    </div>
+
                     <div class="threecal-submit-row">
                         <button type="submit" name="threecal_save_category" class="button button-primary">
                             <?php echo $editing ? esc_html__('Update Category', '3task-calendar') : esc_html__('Add Category', '3task-calendar'); ?>

@@ -18,6 +18,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 class ThreeCal_Shortcode {
 
 	/**
+	 * Number of event lists rendered in this request. Each list pages and searches with its own
+	 * query parameters (tc_page, tc_page2, ...). Public so that tests and themes that render
+	 * lists outside the main query can start counting again. Since 1.8.0 (was a static local).
+	 *
+	 * @var int
+	 */
+	public static $list_instance = 0;
+
+	/**
 	 * Constructor - register shortcodes
 	 */
 	public function __construct() {
@@ -45,6 +54,8 @@ class ThreeCal_Shortcode {
 				'show_filters'   => 'true',
 				'show_legend'    => 'true',
 				'show_subscribe' => 'true',
+				'show_print'     => 'true',
+				'show_search'    => 'true',
 				'mobile_list'    => 'true',
 				'week_starts_on' => '',
 			),
@@ -67,6 +78,8 @@ class ThreeCal_Shortcode {
 				'show_filters'   => $atts['show_filters'] === 'true',
 				'show_legend'    => $atts['show_legend'] === 'true',
 				'show_subscribe' => $atts['show_subscribe'] === 'true',
+				'show_print'     => $atts['show_print'] === 'true',
+				'show_search'    => $atts['show_search'] !== 'false',
 				'mobile_list'    => $atts['mobile_list'] === 'true',
 				'week_starts_on' => $atts['week_starts_on'] !== '' ? absint( $atts['week_starts_on'] ) : null,
 			)
@@ -139,6 +152,8 @@ class ThreeCal_Shortcode {
 				'columns'         => 3,
 				'month'           => '',
 				'running'         => 0,
+				'day'             => '',
+				'show_search'     => 'true',
 			),
 			$atts,
 			'threecal_events'
@@ -147,10 +162,13 @@ class ThreeCal_Shortcode {
 		// Enqueue styles.
 		wp_enqueue_style( 'threecal-public' );
 
-		// Every list on a page pages on its own (tc_page, tc_page2, ...).
-		static $instance = 0;
-		$instance++;
-		$page_param = 1 === $instance ? 'tc_page' : 'tc_page' . $instance;
+		// Every list on a page pages and searches on its own (tc_page, tc_page2, ..., tc_q, tc_q2, ...).
+		self::$list_instance++;
+		$instance = self::$list_instance;
+		$page_param   = 1 === $instance ? 'tc_page' : 'tc_page' . $instance;
+		$search_param = 1 === $instance ? 'tc_q' : 'tc_q' . $instance;
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Public search term, cleaned by sanitize_search().
+		$search_term = isset( $_GET[ $search_param ] ) ? ThreeCal_Event::sanitize_search( wp_unslash( $_GET[ $search_param ] ) ) : '';
 
 		$args = array(
 			'status'   => ThreeCal_Event::visible_statuses(),
@@ -169,10 +187,19 @@ class ThreeCal_Shortcode {
 			$args['location_id'] = absint( $atts['location'] );
 		}
 
+		if ( '' !== $search_term ) {
+			$args['search'] = $search_term;
+		}
+
 		$month   = self::month_range( (string) $atts['month'] );
 		$running = absint( $atts['running'] );
+		$day     = self::day_value( (string) $atts['day'] );
 
-		if ( $running > 0 ) {
+		if ( '' !== $day ) {
+			// One day (since 1.8.0): every event that takes place on it, past days included.
+			$args['range_start'] = $day . ' 00:00:00';
+			$args['range_end']   = $day . ' 23:59:59';
+		} elseif ( $running > 0 ) {
 			// "Now showing": dates that started within the last N days, newest first.
 			$now                  = current_time( 'timestamp' ); // phpcs:ignore WordPress.DateTime.CurrentTimeTimestamp.Requested -- Site time is wanted here.
 			$args['start_after']  = gmdate( 'Y-m-d 00:00:00', $now - $running * DAY_IN_SECONDS );
@@ -192,6 +219,29 @@ class ThreeCal_Shortcode {
 
 		$renderer = new ThreeCal_Calendar_Renderer();
 
+		// The search form carries the other query parameters along and drops term and page.
+		$search_form = '';
+		$reset_url   = remove_query_arg( array( $search_param, $page_param ) );
+		if ( $atts['show_search'] !== 'false' ) {
+			$keep = array();
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Only read to keep the current address; each value is sanitized in render_search_form().
+			foreach ( (array) $_GET as $key => $value ) {
+				if ( $key !== $search_param && $key !== $page_param && is_scalar( $value ) ) {
+					$keep[ sanitize_key( $key ) ] = $value;
+				}
+			}
+			$search_form = ThreeCal_Calendar_Renderer::render_search_form(
+				array(
+					'id'     => 'threecal-list-' . $instance,
+					'value'  => $search_term,
+					'param'  => $search_param,
+					'method' => 'get',
+					'action' => $reset_url,
+					'keep'   => $keep,
+				)
+			);
+		}
+
 		return $renderer->render_event_list(
 			$events,
 			array(
@@ -203,8 +253,27 @@ class ThreeCal_Shortcode {
 				'per_page'        => absint( $atts['limit'] ),
 				'current_page'    => $args['page'],
 				'page_param'      => $page_param,
+				'search_form'     => $search_form,
+				'search_term'     => $search_term,
+				'reset_url'       => $reset_url,
+				'group_days'      => '' !== $search_term,
 			)
 		);
+	}
+
+	/**
+	 * A valid day for the "day" attribute.
+	 *
+	 * @since 1.8.0
+	 * @param string $value Day as YYYY-MM-DD.
+	 * @return string The day, or an empty string when the value is no real date.
+	 */
+	private static function day_value( $value ) {
+		$value = trim( $value );
+		if ( ! preg_match( '/^(\d{4})-(\d{2})-(\d{2})$/', $value, $m ) || ! checkdate( (int) $m[2], (int) $m[3], (int) $m[1] ) ) {
+			return '';
+		}
+		return $value;
 	}
 
 	/**

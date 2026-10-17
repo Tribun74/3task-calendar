@@ -21,6 +21,104 @@
             this.initDeleteConfirm();
             this.initSlugGeneration();
             this.initHeartModal();
+            this.initPrefill();
+        },
+
+        /**
+         * "Fill in from this website": read the event's page and fill empty fields (since 1.7.0).
+         */
+        initPrefill: function() {
+            var $btn = $( '#threecal-prefill-btn' );
+            if ( ! $btn.length ) {
+                return;
+            }
+            var $box = $( '#threecal-prefill-result' );
+            var strings = ( typeof threecal_admin !== 'undefined' && threecal_admin.strings ) ? threecal_admin.strings : {};
+            var show = function( text, kind ) {
+                $box.attr( 'hidden', false ).removeClass( 'is-error is-ok' ).addClass( kind ).text( text );
+            };
+            var fillIfEmpty = function( selector, value ) {
+                var $el = $( selector );
+                if ( $el.length && value && ! $.trim( $el.val() ) ) {
+                    $el.val( value ).trigger( 'change' );
+                    return true;
+                }
+                return false;
+            };
+            $btn.on( 'click', function() {
+                var url = $.trim( $( '#event_url' ).val() );
+                if ( ! url ) {
+                    show( strings.prefill_no_url || 'Please enter the address first.', 'is-error' );
+                    $( '#event_url' ).trigger( 'focus' );
+                    return;
+                }
+                $btn.prop( 'disabled', true );
+                show( strings.prefill_wait || 'Reading the website …', '' );
+                $.post( threecal_admin.ajax_url, {
+                    action: 'threecal_prefill_from_url',
+                    nonce: threecal_admin.nonce,
+                    url: url
+                } ).done( function( response ) {
+                    if ( ! response || ! response.success ) {
+                        show( ( response && response.data && response.data.message ) ? response.data.message : ( strings.prefill_error || 'The website could not be read.' ), 'is-error' );
+                        return;
+                    }
+                    var d = response.data;
+                    var taken = [];
+                    var hints = [];
+                    if ( fillIfEmpty( '#event_title', d.title ) ) { taken.push( d.labels.title ); }
+                    if ( d.start && ! $( '#event_start_date' ).val() ) {
+                        $( 'input[name="event_date_precision"][value="day"]' ).prop( 'checked', true ).trigger( 'change' );
+                        $( '#event_start_date' ).val( d.start.replace( ' ', 'T' ) ).trigger( 'change' );
+                        taken.push( d.labels.start );
+                        if ( d.end && ! $( '#event_end_date' ).val() ) {
+                            $( '#event_end_date' ).val( d.end.replace( ' ', 'T' ) ).trigger( 'change' );
+                            taken.push( d.labels.end );
+                        }
+                        if ( d.all_day && ! $( '#event_all_day' ).is( ':checked' ) ) {
+                            $( '#event_all_day' ).prop( 'checked', true ).trigger( 'change' );
+                        }
+                    }
+                    if ( d.description ) {
+                        var editor = ( window.tinyMCE && tinyMCE.get( 'event_description' ) ) ? tinyMCE.get( 'event_description' ) : null;
+                        var $ta = $( '#event_description' );
+                        if ( editor && ! editor.isHidden() ) {
+                            if ( ! $.trim( editor.getContent( { format: 'text' } ) ) ) {
+                                editor.setContent( '<p>' + $( '<div>' ).text( d.description ).html() + '</p>' );
+                                taken.push( d.labels.description );
+                            }
+                        } else if ( fillIfEmpty( $ta, d.description ) ) {
+                            taken.push( d.labels.description );
+                        }
+                    }
+                    if ( d.organizer && ( d.organizer.name || d.organizer.url ) ) {
+                        var o1 = fillIfEmpty( '#event_organizer_name', d.organizer.name );
+                        var o2 = fillIfEmpty( '#event_organizer_url', d.organizer.url );
+                        if ( o1 || o2 ) { taken.push( d.labels.organizer ); }
+                    }
+                    if ( d.location_id && $( '#event_location' ).val() === '0' ) {
+                        $( '#event_location' ).val( String( d.location_id ) ).trigger( 'change' );
+                        taken.push( d.labels.location );
+                    } else if ( d.location && d.location.name && $( '#event_location' ).val() === '0' ) {
+                        var where = [ d.location.name, d.location.address, $.trim( ( d.location.postal_code || '' ) + ' ' + ( d.location.city || '' ) ) ].filter( Boolean ).join( ', ' );
+                        hints.push( ( strings.prefill_location || 'Location on the website: %s. Add it under Locations and choose it here.' ).replace( '%s', where ) );
+                    }
+                    if ( d.image ) {
+                        hints.push( ( strings.prefill_image || 'Image on the website: %s' ).replace( '%s', d.image ) );
+                    }
+                    var text = taken.length
+                        ? ( strings.prefill_done || 'Taken from the website: %s.' ).replace( '%s', taken.join( ', ' ) )
+                        : ( strings.prefill_nothing_new || 'All fields were already filled in, nothing changed.' );
+                    if ( hints.length ) {
+                        text += ' ' + hints.join( ' ' );
+                    }
+                    show( text, 'is-ok' );
+                } ).fail( function() {
+                    show( strings.prefill_error || 'The website could not be read.', 'is-error' );
+                } ).always( function() {
+                    $btn.prop( 'disabled', false );
+                } );
+            } );
         },
 
         /**

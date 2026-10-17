@@ -102,6 +102,18 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( wp_unslash( $_GET['m
         <?php wp_nonce_field('threecal_save_event'); ?>
         <input type="hidden" name="event_id" value="<?php echo esc_attr($event_id); ?>">
 
+        <?php $threecal_submission = $event ? ThreeCal_Submit::submission( $event ) : null; ?>
+        <?php if ( $threecal_submission ) : ?>
+        <div class="notice notice-info inline threecal-submission-note">
+            <p>
+                <strong><?php esc_html_e( 'Submitted by a visitor', '3task-calendar' ); ?></strong>
+                <?php if ( ! empty( $threecal_submission['at'] ) ) : ?>(<?php echo esc_html( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $threecal_submission['at'] ) ) ); ?>)<?php endif; ?>.
+                <?php if ( ! empty( $threecal_submission['location_text'] ) ) : ?><?php esc_html_e( 'Location as typed:', '3task-calendar' ); ?> <?php echo esc_html( $threecal_submission['location_text'] ); ?>.<?php endif; ?>
+                <?php if ( ! empty( $threecal_submission['email'] ) ) : ?><?php esc_html_e( 'E-mail for questions:', '3task-calendar' ); ?> <a href="mailto:<?php echo esc_attr( $threecal_submission['email'] ); ?>"><?php echo esc_html( $threecal_submission['email'] ); ?></a>.<?php endif; ?>
+                <?php esc_html_e( 'Check the data, choose a location and set the status to Published.', '3task-calendar' ); ?>
+            </p>
+        </div>
+        <?php endif; ?>
         <div class="threecal-edit-container">
             <div class="threecal-edit-main">
                 <!-- Title -->
@@ -223,10 +235,27 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( wp_unslash( $_GET['m
                 <!-- URL -->
                 <div class="threecal-field">
                     <label for="event_url"><?php esc_html_e('Event URL', '3task-calendar'); ?></label>
-                    <input type="url" id="event_url" name="event_url" class="large-text"
-                           value="<?php echo esc_url($event ? $event->url : $defaults['url']); ?>"
-                           placeholder="https://">
-                    <p class="description"><?php esc_html_e('Link to more information about this event.', '3task-calendar'); ?></p>
+                    <div class="threecal-url-row">
+                        <input type="url" id="event_url" name="event_url" class="large-text"
+                               value="<?php echo esc_url($event ? $event->url : $defaults['url']); ?>"
+                               placeholder="https://">
+                        <button type="button" class="button threecal-prefill-btn" id="threecal-prefill-btn"><?php esc_html_e( 'Fill in from this website', '3task-calendar' ); ?></button>
+                    </div>
+                    <p class="description"><?php esc_html_e('Link to more information about this event.', '3task-calendar'); ?> <?php esc_html_e( 'Paste the address of the event and click the button: title, date, description, location and organizer are read from that page when it carries event markup (schema.org) or Open Graph tags. Only empty fields are filled.', '3task-calendar' ); ?></p>
+                    <div class="threecal-prefill-result" id="threecal-prefill-result" hidden aria-live="polite"></div>
+                </div>
+
+                <!-- Organizer -->
+                <?php $threecal_organizer = $event ? $event->get_organizer() : array( 'name' => '', 'url' => '' ); ?>
+                <div class="threecal-field">
+                    <label for="event_organizer_name"><?php esc_html_e('Organizer', '3task-calendar'); ?></label>
+                    <input type="text" id="event_organizer_name" name="event_organizer_name" class="large-text"
+                           value="<?php echo esc_attr($threecal_organizer['name']); ?>">
+                    <label for="event_organizer_url" class="screen-reader-text"><?php esc_html_e('Organizer website', '3task-calendar'); ?></label>
+                    <input type="url" id="event_organizer_url" name="event_organizer_url" class="large-text threecal-organizer-url"
+                           value="<?php echo esc_url($threecal_organizer['url']); ?>"
+                           placeholder="<?php esc_attr_e('Organizer website (https://…)', '3task-calendar'); ?>">
+                    <p class="description"><?php esc_html_e('Who runs this event. Search engines show the name as the organizer. Leave it empty if you only list the event, then no organizer is given.', '3task-calendar'); ?></p>
                 </div>
             </div>
 

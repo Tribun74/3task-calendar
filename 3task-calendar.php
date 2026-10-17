@@ -3,14 +3,14 @@
  * Plugin Name:       3task Calendar
  * Plugin URI:        https://www.3task.de/3task-calendar-pro/
  * Description:       Event calendar without external services: recurring events, iCal subscription, categories, locations and event schema. Month and list views, German translation included.
- * Version:           1.6.0
+ * Version:           1.8.0
  * Author:            3task
  * Author URI:        https://www.3task.de
  * License:           GPL-2.0+
  * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
  * Text Domain:       3task-calendar
  * Domain Path:       /languages
- * Requires at least: 5.8
+ * Requires at least: 6.2
  * Requires PHP:      7.4
  * Tested up to:      7.1
  *
@@ -23,7 +23,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin constants
-define('THREECAL_VERSION', '1.6.0');
+define('THREECAL_VERSION', '1.8.0');
 define('THREECAL_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('THREECAL_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('THREECAL_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -119,6 +119,9 @@ final class ThreeCal {
         require_once THREECAL_PLUGIN_DIR . 'includes/class-themes.php';
         require_once THREECAL_PLUGIN_DIR . 'includes/class-post-dates.php';
         require_once THREECAL_PLUGIN_DIR . 'includes/class-importer.php';
+        require_once THREECAL_PLUGIN_DIR . 'includes/class-prefill.php';
+        require_once THREECAL_PLUGIN_DIR . 'includes/class-feed.php';
+        require_once THREECAL_PLUGIN_DIR . 'includes/class-submit.php';
 
         // WP-CLI: wp threecal import <file.csv>
         if (defined('WP_CLI') && WP_CLI) {
@@ -219,6 +222,9 @@ final class ThreeCal {
         add_action('wp_ajax_threecal_get_events', array($this, 'ajax_get_events'));
         add_action('wp_ajax_nopriv_threecal_get_events', array($this, 'ajax_get_events'));
         add_action('wp_ajax_threecal_get_event_details', array($this, 'ajax_get_event_details'));
+        ThreeCal_Prefill::init();
+        ThreeCal_Feed::init();
+        ThreeCal_Submit::init();
         add_action('wp_ajax_nopriv_threecal_get_event_details', array($this, 'ajax_get_event_details'));
     }
 
@@ -271,6 +277,10 @@ final class ThreeCal {
                 'theme' => array(
                     'type' => 'string',
                     'default' => ''
+                ),
+                'showSearch' => array(
+                    'type' => 'boolean',
+                    'default' => true
                 ),
                 'align' => array(
                     'type' => 'string',
@@ -340,6 +350,9 @@ final class ThreeCal {
         if ($category > 0) {
             $shortcode .= ' category="' . $category . '"';
         }
+        if (isset($attributes['showSearch']) && !$attributes['showSearch']) {
+            $shortcode .= ' show_search="false"';
+        }
         $shortcode .= $theme ? ' theme="' . esc_attr($theme) . '"]' : ']';
 
         $classes = array('wp-block-threecal-calendar');
@@ -379,23 +392,139 @@ final class ThreeCal {
             return;
         }
 
-        // Google needs a concrete start date: events of which only the month is
-        // known get no markup and do not take one of the five places.
-        $events = array_slice(
-            array_values(array_filter(ThreeCal_Event::get_upcoming(50, $category), function ($event) {
-                return !$event->is_month_only();
-            })),
-            0,
-            5
-        );
-        if (empty($events)) {
-            return;
-        }
-
+        // Five places for the next events that really get markup. Events without
+        // a place, with only the month, in a category excluded from the markup or
+        // emptied by the filter are skipped and leave their place to the next one.
         $page_url = get_permalink($post);
-        foreach ($events as $event) {
-            $this->output_event_schema($event, $page_url, $post);
+        $printed  = 0;
+        foreach (ThreeCal_Event::get_upcoming(50, $category) as $event) {
+            $schema = $this->build_event_schema($event, $page_url, $post);
+            if (!$schema) {
+                continue;
+            }
+            echo '<script type="application/ld+json">' . wp_json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) . '</script>' . "\n";
+            if (++$printed >= 5) {
+                break;
+            }
         }
+    }
+
+    /**
+     * Schema check (since 1.7.0): which of the next events get event markup, which of the
+     * five places they take and why an event gets none.
+     *
+     * @param int $limit    How many upcoming events to check.
+     * @param int $category Category ID, 0 for all.
+     * @return array Rows: id, title, start, ok, place (1 to 5 or 0), reasons (keys, see schema_reason_labels()).
+     */
+    public function schema_report($limit = 20, $category = 0) {
+        $settings  = get_option('threecal_settings', array());
+        $disabled  = isset($settings['enable_schema']) && !$settings['enable_schema'];
+        $no_schema = ThreeCal_Category::no_schema_ids();
+        $rows      = array();
+        $printed   = 0;
+        foreach (ThreeCal_Event::get_upcoming(max(1, (int) $limit), (int) $category) as $event) {
+            $reasons = array();
+            if ($disabled) {
+                $reasons[] = 'disabled';
+            } else {
+                if ($event->is_month_only()) {
+                    $reasons[] = 'month_only';
+                }
+                if (!$event->location_id || !ThreeCal_Location::get($event->location_id)) {
+                    $reasons[] = 'no_location';
+                }
+                if ($no_schema) {
+                    foreach (ThreeCal_Event::get_categories($event->id) as $cat) {
+                        if (in_array((int) $cat->id, $no_schema, true)) {
+                            $reasons[] = 'category_excluded';
+                            break;
+                        }
+                    }
+                }
+                if (!$reasons && !$this->build_event_schema($event, home_url('/'))) {
+                    $reasons[] = 'filtered';
+                }
+            }
+            $place = 0;
+            if (!$reasons) {
+                if ($printed < 5) {
+                    $place = ++$printed;
+                } else {
+                    $reasons[] = 'no_place';
+                }
+            }
+            $rows[] = array(
+                'id'      => (int) $event->id,
+                'title'   => $event->title,
+                'start'   => $event->is_month_only() ? $event->month_label() : date_i18n(threecal_date_format(), strtotime($event->start_date)),
+                'ok'      => 0 !== $place,
+                'place'   => $place,
+                'reasons' => $reasons,
+            );
+        }
+        return $rows;
+    }
+
+    /**
+     * Labels of the reasons in schema_report(). Since 1.7.0
+     *
+     * @return array key => label
+     */
+    public static function schema_reason_labels() {
+        return array(
+            'disabled'          => __('Event schema is switched off in the settings', '3task-calendar'),
+            'month_only'        => __('Only the month is known; Google needs a day', '3task-calendar'),
+            'no_location'       => __('No location; Google needs a real place', '3task-calendar'),
+            'category_excluded' => __('Category is marked "Not an event for search engines"', '3task-calendar'),
+            'filtered'          => __('Removed by the filter threecal_event_schema', '3task-calendar'),
+            'no_place'          => __('Fine, but the five places are taken by earlier events', '3task-calendar'),
+        );
+    }
+
+    /**
+     * Published pages and posts that show a calendar (shortcode or block). Since 1.7.0
+     *
+     * @param int $limit Maximum number.
+     * @return WP_Post[]
+     */
+    public function calendar_pages($limit = 5) {
+        global $wpdb;
+        $like_a = '%' . $wpdb->esc_like('[threecal') . '%';
+        $like_b = '%' . $wpdb->esc_like('wp:threecal/calendar') . '%';
+        $like_c = '%' . $wpdb->esc_like('wp:3task-calendar/calendar') . '%';
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- admin-only check, small result.
+        $ids = $wpdb->get_col($wpdb->prepare(
+            "SELECT ID FROM {$wpdb->posts} WHERE post_status = 'publish' AND post_type IN ('page', 'post') AND (post_content LIKE %s OR post_content LIKE %s OR post_content LIKE %s) ORDER BY post_type DESC, post_title ASC LIMIT %d",
+            $like_a, $like_b, $like_c, max(1, (int) $limit)
+        ));
+        return array_filter(array_map('get_post', array_map('intval', $ids)));
+    }
+
+    /**
+     * Does this post or page show a calendar (shortcode or block)? Since 1.7.0
+     *
+     * @param WP_Post $post Post.
+     * @return bool
+     */
+    public function page_has_calendar($post) {
+        return $post && null !== $this->find_calendar_category((string) $post->post_content);
+    }
+
+    /**
+     * Text block for the site's llms.txt: tells AI search engines where the events are. Since 1.7.0
+     *
+     * @return string
+     */
+    public function llms_snippet() {
+        $lines = array(
+            '## ' . __('Events', '3task-calendar'),
+            '- [' . __('Upcoming events as JSON', '3task-calendar') . '](' . ThreeCal_Feed::url() . '): ' . __('all upcoming events with date and time zone, place, organizer, categories and link. Filters: ?category=slug, ?from=YYYY-MM-DD, ?to=YYYY-MM-DD, ?day=YYYY-MM-DD, ?search=word, ?limit=200.', '3task-calendar'),
+        );
+        foreach ($this->calendar_pages(3) as $page) {
+            $lines[] = '- [' . get_the_title($page) . '](' . get_permalink($page) . '): ' . __('calendar page with the upcoming events', '3task-calendar');
+        }
+        return implode("\n", $lines) . "\n";
     }
 
     /**
@@ -471,24 +600,29 @@ final class ThreeCal {
     }
 
     /**
-     * Output individual event schema
+     * Schema.org markup of one event
+     *
+     * @param ThreeCal_Event $event     The event.
+     * @param string         $page_url  URL of the page with the calendar.
+     * @param WP_Post|null   $page_post The page with the calendar.
+     * @return array Markup, empty when the event gets none.
      */
-    private function output_event_schema($event, $page_url = '', $page_post = null) {
+    private function build_event_schema($event, $page_url = '', $page_post = null) {
         if ($event->is_month_only()) {
-            return;
+            return array();
         }
 
         // Google requires a real place and does not allow office hours or other
         // non-events as Event markup: no location or an excluded category, no markup.
         $location = $event->location_id ? ThreeCal_Location::get($event->location_id) : null;
         if (!$location) {
-            return;
+            return array();
         }
         $no_schema = ThreeCal_Category::no_schema_ids();
         if ($no_schema) {
             foreach (ThreeCal_Event::get_categories($event->id) as $cat) {
                 if (in_array((int) $cat->id, $no_schema, true)) {
-                    return;
+                    return array();
                 }
             }
         }
@@ -514,16 +648,11 @@ final class ThreeCal {
             $schema['url'] = $page_url;
         }
 
-        // Image: the event's own, else the image of the page with the calendar, else the site icon or logo.
+        // Image: the event's own, else the image of the page with the calendar. The site
+        // icon or logo does not show the event, so without an image there is none.
         $image = $event->featured_image ? wp_get_attachment_url($event->featured_image) : '';
         if (!$image && $page_post && has_post_thumbnail($page_post)) {
             $image = get_the_post_thumbnail_url($page_post, 'full');
-        }
-        if (!$image && function_exists('get_site_icon_url')) {
-            $image = get_site_icon_url(512);
-        }
-        if (!$image && get_theme_mod('custom_logo')) {
-            $image = wp_get_attachment_image_url((int) get_theme_mod('custom_logo'), 'full');
         }
         if ($image) {
             $schema['image'] = $image;
@@ -550,14 +679,30 @@ final class ThreeCal {
             );
         }
 
-        // Add organizer
-        $schema['organizer'] = array(
-            '@type' => 'Organization',
-            'name' => get_bloginfo('name'),
-            'url' => home_url('/')
-        );
+        // Organizer: only the one entered for this event. The website is not the
+        // organizer of events it merely lists, so without a name there is none.
+        $organizer = $event->get_organizer();
+        if ('' !== $organizer['name']) {
+            $schema['organizer'] = array_filter(array(
+                '@type' => 'Organization',
+                'name' => $organizer['name'],
+                'url' => $organizer['url']
+            ));
+        }
 
-        echo '<script type="application/ld+json">' . wp_json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) . '</script>' . "\n";
+        /**
+         * Filters the Schema.org markup of one event before it is printed.
+         *
+         * Return an empty value to print no markup for this event. Since 1.6.2
+         * the next upcoming event then takes its place among the five.
+         *
+         * @since 1.6.1
+         * @param array          $schema   Event markup as an array.
+         * @param ThreeCal_Event $event    The event.
+         * @param string         $page_url URL of the page with the calendar.
+         */
+        $schema = apply_filters('threecal_event_schema', $schema, $event, $page_url);
+        return is_array($schema) ? $schema : array();
     }
 
     /**
@@ -732,6 +877,11 @@ final class ThreeCal {
             'url' => $event->url,
             'featured_image' => $event->featured_image ? wp_get_attachment_url($event->featured_image) : null
         );
+        // Highlighted category (since 1.7.0): the list view built by JavaScript shows the badge too.
+        $highlight = ThreeCal_Calendar_Renderer::highlight_category($categories);
+        if ($highlight) {
+            $data['highlight'] = array('name' => $highlight->name, 'color' => (string) $highlight->color);
+        }
 
         /**
          * Filters the data of one event as sent to the calendar views.
@@ -743,11 +893,31 @@ final class ThreeCal {
     }
 
     /**
+     * Most results one search returns.
+     *
+     * @since 1.8.0
+     */
+    const SEARCH_LIMIT = 100;
+
+    /**
+     * PHP date format for the heading of one day in search results and day lists.
+     *
+     * @since 1.8.0
+     * @return string
+     */
+    public static function day_heading_format() {
+        /* translators: PHP date format for the heading of one day in search results, for example "Friday, October 24, 2026". See https://wordpress.org/documentation/article/customize-date-and-time-format/ */
+        return _x( 'l, F j, Y', 'heading of a day in search results', '3task-calendar' );
+    }
+
+    /**
      * AJAX handler: Get events for calendar
      *
      * Public, read-only and limited to published events. No nonce on purpose:
      * pages with the calendar are often served from a page cache, and a cached
      * nonce expires after 12 to 24 hours, which would break month navigation.
+     * With "search" (since 1.8.0) it returns matching running and upcoming
+     * events of every month instead; the term is cleaned and cut to 80 characters.
      */
     public function ajax_get_events() {
         // phpcs:disable WordPress.Security.NonceVerification.Missing -- Public read-only endpoint, see docblock.
@@ -755,6 +925,7 @@ final class ThreeCal {
         $year     = isset( $_POST['year'] ) ? absint( $_POST['year'] ) : 0;
         $category = isset( $_POST['category'] ) ? absint( $_POST['category'] ) : 0;
         $location = isset( $_POST['location'] ) ? absint( $_POST['location'] ) : 0;
+        $search   = isset( $_POST['search'] ) ? ThreeCal_Event::sanitize_search( wp_unslash( $_POST['search'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized by sanitize_search().
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
         if ( $month < 1 || $month > 12 || $year < 2000 || $year > 2100 ) {
@@ -762,14 +933,26 @@ final class ThreeCal {
             $year  = (int) current_time( 'Y' );
         }
 
-        $range_start = sprintf( '%04d-%02d-01 00:00:00', $year, $month );
-        $range_end   = gmdate( 'Y-m-t 23:59:59', strtotime( sprintf( '%04d-%02d-01 00:00:00 UTC', $year, $month ) ) );
+        if ( '' !== $search ) {
+            // Search (since 1.8.0): running and upcoming events that match, whatever the month.
+            $args = array(
+                'status'     => ThreeCal_Event::visible_statuses(),
+                'ends_after' => current_time( 'mysql' ),
+                'search'     => $search,
+                'orderby'    => 'start_date',
+                'order'      => 'ASC',
+                'per_page'   => self::SEARCH_LIMIT,
+            );
+        } else {
+            $range_start = sprintf( '%04d-%02d-01 00:00:00', $year, $month );
+            $range_end   = gmdate( 'Y-m-t 23:59:59', strtotime( sprintf( '%04d-%02d-01 00:00:00 UTC', $year, $month ) ) );
 
-        $args = array(
-            'status'      => ThreeCal_Event::visible_statuses(),
-            'range_start' => $range_start,
-            'range_end'   => $range_end,
-        );
+            $args = array(
+                'status'      => ThreeCal_Event::visible_statuses(),
+                'range_start' => $range_start,
+                'range_end'   => $range_end,
+            );
+        }
 
         if ($category > 0) {
             $args['category_id'] = $category;
@@ -797,6 +980,8 @@ final class ThreeCal {
             $event_data['tba'] = $month_only ? ThreeCal_Event::tba_text() : '';
             $event_data['postponed'] = ThreeCal_Post_Dates::postponed_text($event);
             $event_data['day']  = $days ? $days[0] : (int) gmdate( 'j', strtotime( $event->start_date ) );
+            // Day of the event (Y-m-d) for lists that span several months (search results, since 1.8.0).
+            $event_data['date'] = substr( (string) $event->start_date, 0, 10 );
             if ( $event->all_day ) {
                 $event_data['time'] = __( 'All day', '3task-calendar' );
             } else {
@@ -815,6 +1000,19 @@ final class ThreeCal {
      * Public and read-only (published events only), no nonce for the same
      * page cache reason as ajax_get_events().
      */
+    /**
+     * rel attribute of the "More Information" link in the details popup.
+     * Runs the same filter as the links printed by PHP, context "details". Since 1.6.3
+     *
+     * @param ThreeCal_Event $event The event.
+     * @return string
+     */
+    private function details_url_rel($event) {
+        $attrs = ThreeCal_Calendar_Renderer::apply_link_rule(array('rel' => 'noopener', 'target' => '_blank', 'href' => $event->url), $event);
+        $attrs = apply_filters('threecal_event_link_attributes', $attrs, $event, 'details');
+        return isset($attrs['rel']) ? sanitize_text_field((string) $attrs['rel']) : '';
+    }
+
     public function ajax_get_event_details() {
         // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Public read-only endpoint, see docblock.
         $event_id = isset($_POST['event_id']) ? absint($_POST['event_id']) : 0;
@@ -878,6 +1076,7 @@ final class ThreeCal {
             'categories' => $cat_data,
             'color' => $event->color,
             'url' => $event->url ? esc_url_raw($event->url) : '',
+            'url_rel' => $event->url ? $this->details_url_rel($event) : '',
             'ics_url' => $month_only ? '' : ThreeCal_ICS::event_url($event->id),
             'postponed' => ThreeCal_Post_Dates::postponed_text($event),
             'featured_image' => $event->featured_image ? wp_get_attachment_url($event->featured_image) : null

@@ -38,6 +38,9 @@ class ThreeCal_Icons {
 			'rss'              => array( 'M4 19a1 1 0 1 0 2 0a1 1 0 1 0 -2 0', 'M4 4a16 16 0 0 1 16 16', 'M4 11a9 9 0 0 1 9 9' ),
 			'external-link'    => array( 'M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6', 'M11 13l9 -9', 'M15 4h5v5' ),
 			'x'                => array( 'M18 6l-12 12', 'M6 6l12 12' ),
+			'search'           => array( 'M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0', 'M21 21l-6 -6' ),
+			'printer'          => array( 'M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2', 'M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4', 'M7 13m0 2a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-6a2 2 0 0 1 -2 -2z' ),
+			'star'             => array( 'M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z' ),
 			'list-details'     => array( 'M13 5h8', 'M13 9h5', 'M13 15h8', 'M13 19h5', 'M3 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4', 'M3 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4' ),
 			'layout-dashboard' => array( 'M5 4h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1v-6a1 1 0 0 1 1 -1', 'M5 16h4a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1v-2a1 1 0 0 1 1 -1', 'M15 12h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1v-6a1 1 0 0 1 1 -1', 'M15 4h4a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1v-2a1 1 0 0 1 1 -1' ),
 			'category'         => array( 'M4 4h6v6h-6l0 -6', 'M14 4h6v6h-6l0 -6', 'M4 14h6v6h-6l0 -6', 'M14 17a3 3 0 1 0 6 0a3 3 0 1 0 -6 0' ),
@@ -119,7 +122,7 @@ class ThreeCal_Icons {
 	 * @return array
 	 */
 	public static function for_js() {
-		$names = array( 'calendar-event', 'clock', 'map-pin', 'route', 'calendar-plus', 'external-link', 'calendar-question' );
+		$names = array( 'calendar-event', 'clock', 'map-pin', 'route', 'calendar-plus', 'external-link', 'calendar-question', 'star', 'search', 'x' );
 		$icons = array();
 		foreach ( $names as $name ) {
 			$icons[ $name ] = self::svg( $name, 18 );

@@ -152,6 +152,10 @@
 }
 
 .threecal-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 12px;
     margin: -4px 0 16px;
 }
 
@@ -1744,4 +1748,586 @@ a.threecal-event-ics {
 .threecal-poster-date-tba .threecal-poster-day {
     font-size: 1em;
     text-transform: uppercase;
+}
+
+/* ------------------------------------------------------------------
+   Design "Theme colors" (since 1.7.0): variables come from theme.json
+   through the style attribute, the font is the body font of the theme.
+   ------------------------------------------------------------------ */
+.threecal-theme-site,
+.threecal-theme-site .threecal-modal,
+.threecal-single-event.threecal-theme-site,
+.threecal-upcoming.threecal-theme-site,
+.threecal-event-list.threecal-theme-site {
+    font-family: var(--tc-font, inherit);
+    --tc-surface-2: color-mix(in srgb, var(--tc-surface) 94%, var(--tc-text));
+    --tc-surface-3: color-mix(in srgb, var(--tc-surface) 88%, var(--tc-text));
+    --tc-muted: color-mix(in srgb, var(--tc-text) 62%, var(--tc-surface));
+    --tc-border: color-mix(in srgb, var(--tc-text) 14%, var(--tc-surface));
+    --tc-radius: 10px;
+    --tc-radius-sm: 6px;
+    --tc-shadow: none;
+    --tc-shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+
+.threecal-wrapper.threecal-theme-site {
+    background: var(--tc-surface);
+}
+
+/* ------------------------------------------------------------------
+   Highlighted categories (since 1.7.0): frame in the category color and a badge.
+   ------------------------------------------------------------------ */
+.threecal-list-event.threecal-is-highlight {
+    box-shadow: inset 3px 0 0 var(--tc-ev, var(--tc-accent));
+    background: color-mix(in srgb, var(--tc-ev, var(--tc-accent)) 7%, transparent);
+}
+
+.threecal-list-event .threecal-highlight-badge {
+    margin: 0 0 4px;
+}
+
+.threecal-event-card.threecal-is-highlight,
+.threecal-poster-card.threecal-is-highlight {
+    position: relative;
+    border-color: var(--tc-ev, var(--tc-accent));
+    box-shadow: 0 0 0 1px var(--tc-ev, var(--tc-accent)), var(--tc-shadow);
+}
+
+.threecal-highlight-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0 0 8px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--tc-ev, var(--tc-accent));
+    color: var(--tc-ev-ink, var(--tc-accent-ink));
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    line-height: 1.4;
+}
+
+.threecal-highlight-badge .threecal-icon {
+    width: 12px;
+    height: 12px;
+}
+
+.threecal-poster-body .threecal-highlight-badge {
+    margin-bottom: 6px;
+}
+
+/* ------------------------------------------------------------------
+   Print (since 1.7.0): the month grid or list without controls, readable in black and white.
+   ------------------------------------------------------------------ */
+.threecal-print-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    margin-left: 6px;
+    border: 1px solid var(--tc-border);
+    border-radius: var(--tc-radius-sm);
+    background: var(--tc-surface);
+    color: var(--tc-text);
+    cursor: pointer;
+}
+
+.threecal-print-btn:hover,
+.threecal-print-btn:focus-visible {
+    border-color: var(--tc-accent);
+    color: var(--tc-accent);
+    outline: none;
+}
+
+@media print {
+    .threecal-wrapper {
+        box-shadow: none;
+        border: 0;
+        background: #fff;
+        color: #000;
+        --tc-text: #000;
+        --tc-muted: #333;
+        --tc-border: #999;
+        --tc-surface: #fff;
+        --tc-surface-2: #fff;
+        --tc-surface-3: #f2f2f2;
+        --tc-cell-height: auto;
+    }
+
+    .threecal-controls,
+    .threecal-filters,
+    .threecal-search,
+    .threecal-search-reset,
+    .threecal-results-reset,
+    .threecal-announce,
+    .threecal-legend-toggle,
+    .threecal-subscribe,
+    .threecal-print-btn,
+    .threecal-modal,
+    .threecal-event-ics,
+    .threecal-pagination,
+    .threecal-more-events {
+        display: none !important;
+    }
+
+    .threecal-wrapper .threecal-title {
+        font-size: 20pt;
+        margin-bottom: 8pt;
+    }
+
+    .threecal-month-grid td {
+        height: auto;
+        min-height: 26mm;
+        border: 1px solid #999;
+        vertical-align: top;
+        page-break-inside: avoid;
+    }
+
+    .threecal-wrapper .threecal-event-dot,
+    .threecal-wrapper .threecal-tba-event {
+        display: block;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        background: #fff !important;
+        color: #000 !important;
+        border-left: 3px solid var(--tc-ev, #000);
+        border-radius: 0;
+        box-shadow: none;
+        font-size: 8pt;
+        padding: 1pt 3pt;
+        margin: 1pt 0;
+    }
+
+    .threecal-wrapper .threecal-event-extra {
+        display: block !important;
+    }
+
+    .threecal-event-card,
+    .threecal-poster-card {
+        box-shadow: none;
+        border: 1px solid #999;
+        page-break-inside: avoid;
+    }
+
+    .threecal-event-title a,
+    .threecal-poster-title a {
+        color: #000;
+        text-decoration: none;
+    }
+
+    .threecal-event-title a[href^="http"]::after {
+        content: " (" attr(href) ")";
+        font-size: 8pt;
+        font-weight: normal;
+        color: #333;
+        word-break: break-all;
+    }
+}
+
+/* Long words in poster titles (German compounds) wrap instead of overflowing. Since 1.7.0 */
+.threecal-poster-title,
+.threecal-event-title {
+    overflow-wrap: anywhere;
+}
+
+/* ------------------------------------------------------------------
+   Submission form [threecal_submit] (since 1.7.0)
+   ------------------------------------------------------------------ */
+.threecal-submit {
+    max-width: 640px;
+}
+
+.threecal-submit-field {
+    margin: 0 0 14px;
+}
+
+.threecal-submit-field label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.threecal-submit-field input[type="text"],
+.threecal-submit-field input[type="url"],
+.threecal-submit-field input[type="email"],
+.threecal-submit-field input[type="date"],
+.threecal-submit-field input[type="time"],
+.threecal-submit-field textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 9px 11px;
+    border: 1px solid #c9ccd4;
+    border-radius: 8px;
+    font: inherit;
+}
+
+.threecal-submit-field.has-error input,
+.threecal-submit-field.has-error textarea {
+    border-color: #d63638;
+}
+
+.threecal-submit-error {
+    display: block;
+    color: #d63638;
+    font-size: 0.9em;
+    margin-top: 4px;
+}
+
+.threecal-submit-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+@media (max-width: 600px) {
+    .threecal-submit-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.threecal-submit-hp {
+    position: absolute !important;
+    left: -9999px !important;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+.threecal-submit-note {
+    font-size: 0.9em;
+    opacity: 0.8;
+}
+
+.threecal-submit-notice {
+    padding: 12px 14px;
+    border-radius: 8px;
+    margin: 0 0 16px;
+    border-left: 4px solid #2271b1;
+    background: rgba(34, 113, 177, 0.08);
+}
+
+.threecal-submit-notice.is-error {
+    border-left-color: #d63638;
+    background: rgba(214, 54, 56, 0.08);
+}
+
+.threecal-submit-notice.is-success {
+    border-left-color: #00a32a;
+    background: rgba(0, 163, 42, 0.08);
+}
+
+.threecal-submit button.threecal-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 18px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--tc-accent, #4f46e5);
+    color: var(--tc-accent-ink, #fff);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.threecal-submit button.threecal-button:hover,
+.threecal-submit button.threecal-button:focus-visible {
+    filter: brightness(1.08);
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--tc-accent, #4f46e5) 30%, transparent);
+}
+
+/* ------------------------------------------------------------------
+   Search and day filter (since 1.8.0)
+   ------------------------------------------------------------------ */
+.threecal-search {
+    display: inline-flex;
+    align-items: stretch;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--tc-border);
+    border-radius: 999px;
+    background: var(--tc-surface-2);
+    overflow: hidden;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.threecal-search:focus-within {
+    border-color: var(--tc-accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--tc-accent) 22%, transparent);
+}
+
+.threecal-wrapper .threecal-search-input,
+.threecal-event-list .threecal-search-input {
+    flex: 1 1 auto;
+    width: 220px;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 38px;
+    margin: 0;
+    padding: 0 4px 0 16px;
+    border: 0;
+    border-radius: 999px 0 0 999px;
+    background: transparent;
+    color: var(--tc-text);
+    font: inherit;
+    font-size: 14px;
+    line-height: 1.2;
+    box-shadow: none;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.threecal-search-input::-webkit-search-decoration {
+    -webkit-appearance: none;
+}
+
+.threecal-search-input::placeholder {
+    color: var(--tc-muted);
+    opacity: 1;
+}
+
+.threecal-wrapper .threecal-search-btn,
+.threecal-event-list .threecal-search-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0 999px 999px 0;
+    background: transparent;
+    color: var(--tc-muted);
+    cursor: pointer;
+    box-shadow: none;
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.threecal-wrapper .threecal-search-btn:hover,
+.threecal-event-list .threecal-search-btn:hover,
+.threecal-wrapper .threecal-search-btn:focus-visible,
+.threecal-event-list .threecal-search-btn:focus-visible {
+    color: var(--tc-accent);
+    background: var(--tc-surface);
+    outline: none;
+}
+
+.threecal-event-list .threecal-search {
+    margin: 0 0 16px;
+    background: var(--tc-surface);
+}
+
+.threecal-event-list .threecal-search-input {
+    min-width: 240px;
+}
+
+.threecal-event-list .threecal-search-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+    margin: 0 0 16px;
+    padding: 10px 14px;
+    border-radius: var(--tc-radius-sm);
+    background: var(--tc-surface-2);
+    color: var(--tc-text);
+    font-size: 14px;
+}
+
+.threecal-event-list .threecal-search-reset {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--tc-accent);
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.threecal-event-list .threecal-search-reset:hover {
+    text-decoration: underline;
+}
+
+.threecal-list-group + .threecal-list-group {
+    margin-top: 22px;
+}
+
+.threecal-event-list .threecal-list-group-title {
+    margin: 0 0 10px;
+    padding: 0 0 6px;
+    border-bottom: 1px solid var(--tc-border);
+    color: var(--tc-muted);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+/* Results under the month grid: the list of one day, or the search results. */
+.threecal-results {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--tc-border);
+}
+
+.threecal-results[hidden] {
+    display: none;
+}
+
+.threecal-results-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+    margin-bottom: 12px;
+}
+
+.threecal-wrapper .threecal-results-title {
+    margin: 0;
+    padding: 0;
+    color: var(--tc-text);
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.3;
+    outline: none;
+}
+
+.threecal-wrapper .threecal-results-reset {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 34px;
+    margin: 0;
+    padding: 0 14px 0 10px;
+    border: 1px solid var(--tc-border);
+    border-radius: 999px;
+    background: var(--tc-surface-2);
+    color: var(--tc-text);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: none;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.threecal-wrapper .threecal-results-reset:hover,
+.threecal-wrapper .threecal-results-reset:focus-visible {
+    background: var(--tc-surface);
+    color: var(--tc-accent);
+}
+
+.threecal-wrapper.threecal-searching .threecal-calendar {
+    display: none;
+}
+
+.threecal-wrapper.threecal-searching .threecal-results {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+}
+
+/* Day numbers are buttons: a click shows the events of that day under the grid. */
+.threecal-wrapper button.threecal-day-number {
+    margin: 0;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 650;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: none;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.threecal-wrapper button.threecal-day-number:hover,
+.threecal-wrapper button.threecal-day-number:focus-visible {
+    background: var(--tc-surface-3);
+    color: var(--tc-text);
+    outline: none;
+}
+
+.threecal-wrapper .threecal-is-today button.threecal-day-number:hover,
+.threecal-wrapper .threecal-is-today button.threecal-day-number:focus-visible {
+    background: var(--tc-accent);
+    color: var(--tc-accent-ink);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--tc-accent) 30%, transparent);
+}
+
+.threecal-wrapper .threecal-month-grid td.threecal-day:not(.threecal-day-empty) {
+    cursor: pointer;
+}
+
+.threecal-wrapper .threecal-month-grid td.threecal-is-selected {
+    background: color-mix(in srgb, var(--tc-accent) 9%, transparent);
+    box-shadow: inset 0 0 0 2px var(--tc-accent);
+    border-radius: var(--tc-radius-sm);
+}
+
+/* In the calendar the field sits in the filter row next to the category select, same height and corners. */
+.threecal-wrapper .threecal-filters .threecal-search {
+    border-radius: var(--tc-radius-sm);
+    background: var(--tc-surface);
+}
+
+.threecal-wrapper .threecal-filters .threecal-search-input {
+    border-radius: var(--tc-radius-sm) 0 0 var(--tc-radius-sm);
+}
+
+.threecal-wrapper .threecal-filters .threecal-search-btn {
+    border-radius: 0 var(--tc-radius-sm) var(--tc-radius-sm) 0;
+}
+
+.threecal-theme-accent .threecal-results {
+    margin: 0 20px;
+    padding-bottom: 18px;
+}
+
+.threecal-theme-accent.threecal-searching .threecal-results {
+    padding-top: 18px;
+}
+
+.threecal-theme-dark .threecal-search,
+.threecal-theme-dark .threecal-event-list .threecal-search,
+.threecal-wrapper.threecal-theme-dark .threecal-results-reset {
+    background: var(--tc-surface-2);
+}
+
+@media (max-width: 600px) {
+    .threecal-filters .threecal-search,
+    .threecal-wrapper .threecal-filters .threecal-category-filter {
+        flex: 1 1 100%;
+        display: flex;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .threecal-wrapper .threecal-search-input,
+    .threecal-event-list .threecal-search-input {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .threecal-event-list .threecal-search {
+        display: flex;
+        width: 100%;
+    }
+
+    .threecal-theme-accent .threecal-results {
+        margin: 0 8px;
+    }
+
+    .threecal-wrapper .threecal-month-grid td.threecal-is-selected {
+        border-radius: 6px;
+    }
 }

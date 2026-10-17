@@ -240,9 +240,39 @@ class ThreeCal_ICS {
 		}
 
 		$lines[] = 'STATUS:' . ( 'cancelled' === $event->status ? 'CANCELLED' : 'CONFIRMED' );
+
+		// Reminder (since 1.7.0): the visitor's own calendar shows it, nothing is stored here.
+		$trigger = 'cancelled' === $event->status ? '' : self::reminder_trigger();
+		if ( $trigger ) {
+			$lines[] = 'BEGIN:VALARM';
+			$lines[] = 'ACTION:DISPLAY';
+			$lines[] = 'DESCRIPTION:' . $this->escape_text( $event->title );
+			$lines[] = 'TRIGGER:' . $trigger;
+			$lines[] = 'END:VALARM';
+		}
 		$lines[] = 'END:VEVENT';
 
 		return $lines;
+	}
+
+	/**
+	 * iCalendar trigger for the reminder from the settings, empty when off. Since 1.7.0
+	 *
+	 * @return string For example -PT30M, -PT1H, -P1D.
+	 */
+	public static function reminder_trigger() {
+		$settings = get_option( 'threecal_settings', array() );
+		$minutes  = isset( $settings['ics_reminder'] ) ? absint( $settings['ics_reminder'] ) : 0;
+		if ( $minutes <= 0 ) {
+			return '';
+		}
+		if ( 0 === $minutes % 1440 ) {
+			return '-P' . ( $minutes / 1440 ) . 'D';
+		}
+		if ( 0 === $minutes % 60 ) {
+			return '-PT' . ( $minutes / 60 ) . 'H';
+		}
+		return '-PT' . $minutes . 'M';
 	}
 
 	/**

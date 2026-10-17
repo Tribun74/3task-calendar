@@ -38,7 +38,13 @@
                 location: $calendar.data('location') || 0,
                 weekStarts: $calendar.data('week-starts') || 1,
                 month: parseInt($calendar.find('.threecal-calendar').data('month')),
-                year: parseInt($calendar.find('.threecal-calendar').data('year'))
+                year: parseInt($calendar.find('.threecal-calendar').data('year')),
+                // Search and day filter (since 1.8.0)
+                search: '',
+                day: null,
+                events: [],
+                loaded: false,
+                stale: false
             });
 
             // Small screens: start with the list, the month grid only fits dots there
@@ -56,25 +62,86 @@
                 self.loadMonth($calendar);
             }
 
-            // Navigation events
+            // Navigation events (a running search ends when the visitor moves on)
             $calendar.find('.threecal-prev').on('click', function() {
+                self.clearSearch($calendar, true);
                 self.navigateMonth($calendar, -1);
             });
 
             $calendar.find('.threecal-next').on('click', function() {
+                self.clearSearch($calendar, true);
                 self.navigateMonth($calendar, 1);
             });
 
             $calendar.find('.threecal-today-btn').on('click', function() {
+                self.clearSearch($calendar, true);
                 self.goToToday($calendar);
             });
 
-            // Category filter
+            // Search (since 1.8.0): Enter or the button searches, Escape clears
+            $calendar.find('.threecal-search').on('submit', function(e) {
+                e.preventDefault();
+                self.runSearch($calendar);
+            });
+
+            $calendar.find('.threecal-search-input').on('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    self.runSearch($calendar);
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    $(this).val('');
+                    self.clearSearch($calendar, false);
+                }
+            }).on('input search', function() {
+                // The native clear button of the field (or deleting the text) ends the search
+                if ($(this).val() === '' && $calendar.data('threecal').search !== '') {
+                    self.clearSearch($calendar, false);
+                }
+            });
+
+            $calendar.find('.threecal-results-reset').on('click', function() {
+                if ($calendar.data('threecal').search !== '') {
+                    $calendar.find('.threecal-search-input').val('');
+                    self.clearSearch($calendar, false);
+                    $calendar.find('.threecal-search-input').trigger('focus');
+                } else {
+                    self.closeResults($calendar);
+                }
+            });
+
+            // Day filter (since 1.8.0): a day number or an empty part of a day cell
+            $calendar.on('click', '.threecal-day-number', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                self.showDay($calendar, $(this).data('date'));
+            });
+
+            $calendar.on('click', 'td.threecal-day:not(.threecal-day-empty)', function(e) {
+                if ($(e.target).closest('a, button').length) {
+                    return;
+                }
+                self.showDay($calendar, $(this).data('date'));
+            });
+
+            // Print the month that is on screen (since 1.7.0)
+            $calendar.find('.threecal-print-btn').on('click', function() {
+                $('.threecal-wrapper').removeClass('threecal-printing');
+                $calendar.addClass('threecal-printing');
+                window.print();
+            });
+
+            // Category filter: combines with a running search
             $calendar.find('.threecal-category-filter').on('change', function() {
                 var data = $calendar.data('threecal');
                 data.category = parseInt($(this).val()) || 0;
                 $calendar.data('threecal', data);
-                self.loadMonth($calendar);
+                if (data.search !== '') {
+                    data.stale = true;
+                    self.runSearch($calendar);
+                } else {
+                    self.loadMonth($calendar);
+                }
             });
 
             // View switcher
@@ -90,6 +157,7 @@
                 $calendar.data('threecal', data);
 
                 // Load appropriate view
+                self.clearSearch($calendar, true);
                 self.loadMonth($calendar);
             });
 
@@ -100,10 +168,11 @@
                 self.showEventModal($calendar, eventId);
             });
 
-            // More events click: expand the hidden events of that day
+            // More events click: the list of that day under the grid (since 1.8.0)
             $calendar.on('click', '.threecal-more-events', function(e) {
                 e.preventDefault();
-                self.showDayEvents($(this));
+                e.stopPropagation();
+                self.showDay($calendar, $(this).data('date'));
             });
         },
 
@@ -150,7 +219,9 @@
             var $calendarGrid = $calendar.find('.threecal-calendar');
             var $title = $calendar.find('.threecal-title');
 
-            // Add loading state
+            // Add loading state, close the day list of the month that goes away
+            self.closeResults($calendar);
+            data.stale = false;
             $calendarGrid.addClass('threecal-loading').attr('aria-busy', 'true');
 
             $.ajax({
@@ -170,6 +241,8 @@
                         // Update the title only after the new month has arrived
                         var monthName = threecal_data.i18n.months[data.month - 1];
                         $title.html('<span class="threecal-title-month">' + self.escapeHtml(monthName) + '</span> <span class="threecal-title-year">' + parseInt(data.year, 10) + '</span>');
+                        data.events = response.data || [];
+                        data.loaded = true;
 
                         if (data.view === 'list') {
                             self.renderList($calendar, response.data);
@@ -283,7 +356,7 @@
 
                         html += '<td class="' + classes + '" data-date="' + dateStr + '">';
                         html += '<div class="threecal-day-header">';
-                        html += '<span class="threecal-day-number"' + (isToday ? ' aria-current="date"' : '') + '>' + currentDay + '</span>';
+                        html += '<button type="button" class="threecal-day-number" data-date="' + dateStr + '"' + (isToday ? ' aria-current="date"' : '') + ' aria-label="' + self.escapeHtml(self.fill(threecal_data.i18n.events_on || 'Events on {date}', { date: self.formatDateYear(dateStr) })) + '">' + currentDay + '</button>';
                         html += '</div>';
 
                         if (hasEvents) {
@@ -301,7 +374,7 @@
                             });
 
                             if (dayEvents.length > 3) {
-                                html += '<a href="#" class="threecal-more-events" data-date="' + dateStr + '" aria-expanded="false">+' + (dayEvents.length - 3) + ' ' + self.escapeHtml(threecal_data.i18n.more) + '</a>';
+                                html += '<a href="#" class="threecal-more-events" data-date="' + dateStr + '">+' + (dayEvents.length - 3) + ' ' + self.escapeHtml(threecal_data.i18n.more) + '</a>';
                             }
 
                             html += '</div>';
@@ -347,9 +420,14 @@
          */
         listEvent: function(event) {
             var self = this;
-            var html = '<div class="threecal-list-event' + (event.cancelled ? ' threecal-is-cancelled' : '') + '" data-event-id="' + parseInt(event.id, 10) + '" role="button" tabindex="0" style="' + self.evStyle(event.color) + '">';
+            var highlight = event.highlight && event.highlight.name ? event.highlight : null;
+            var html = '<div class="threecal-list-event' + (event.cancelled ? ' threecal-is-cancelled' : '') + (highlight ? ' threecal-is-highlight' : '') + '" data-event-id="' + parseInt(event.id, 10) + '" role="button" tabindex="0" style="' + self.evStyle(event.color) + '">';
             html += '<div class="threecal-list-event-color"></div>';
             html += '<div class="threecal-list-event-content">';
+            if (highlight) {
+                // Badge of a highlighted category (since 1.7.0), colors like the PHP badge.
+                html += '<span class="threecal-highlight-badge" style="' + self.evStyle(highlight.color) + '">' + self.icon('star') + self.escapeHtml(highlight.name) + '</span>';
+            }
             html += '<div class="threecal-list-event-title">' + self.cancelledBadge(event) + self.escapeHtml(event.title) + '</div>';
             var metaParts = [];
             if (event.month_only && event.tba) {
@@ -448,9 +526,15 @@
             // Update DOM
             $calendarGrid.data('month', data.month).data('year', data.year);
             $calendarGrid.html(html);
+            self.bindListEvents($calendar, $calendarGrid);
+        },
 
-            // Click and keyboard handler for list events
-            $calendarGrid.find('.threecal-list-event').on('click keydown', function(e) {
+        /**
+         * Click and keyboard handler for the rows of a list
+         */
+        bindListEvents: function($calendar, $container) {
+            var self = this;
+            $container.find('.threecal-list-event').on('click keydown', function(e) {
                 if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') {
                     return;
                 }
@@ -458,6 +542,279 @@
                 var eventId = $(this).data('event-id');
                 self.showEventModal($calendar, eventId);
             });
+        },
+
+        /**
+         * Events grouped by day, in the markup of the list view. Used by the day filter
+         * under the month grid and by the search results (since 1.8.0).
+         */
+        renderDayGroups: function(events, emptyMessage, forceDate) {
+            var self = this;
+            var html = '<div class="threecal-list-view">';
+            if (!events || !events.length) {
+                html += '<div class="threecal-no-events">' + self.escapeHtml(emptyMessage || threecal_data.i18n.no_events) + '</div></div>';
+                return html;
+            }
+            var currentKey = null;
+            events.forEach(function(event) {
+                var dateStr = String(event.date || event.start || '').substr(0, 10);
+                if (forceDate && !event.month_only && dateStr !== forceDate) {
+                    // Day filter: a multi-day event is listed under the chosen day, without its start time
+                    event = $.extend({}, event, { time: '' });
+                    dateStr = forceDate;
+                }
+                var key = event.month_only ? 'm' + dateStr.substr(0, 7) : 'd' + dateStr;
+                if (key !== currentKey) {
+                    if (currentKey !== null) {
+                        html += '</div>';
+                    }
+                    currentKey = key;
+                    html += '<div class="threecal-list-day' + (event.month_only ? ' threecal-list-tba' : '') + '" data-date="' + self.escapeHtml(dateStr) + '">';
+                    html += '<div class="threecal-list-day-header">';
+                    if (event.month_only) {
+                        html += '<span class="threecal-list-day-name">' + self.escapeHtml(self.formatMonthYear(dateStr)) + '</span>';
+                        html += '<span class="threecal-list-day-date">' + self.escapeHtml(threecal_data.i18n.month_tba || '') + '</span>';
+                    } else {
+                        html += '<span class="threecal-list-day-name">' + self.escapeHtml(self.weekdayName(dateStr)) + '</span>';
+                        html += '<span class="threecal-list-day-date">' + self.escapeHtml(self.formatDateYear(dateStr)) + '</span>';
+                    }
+                    html += '</div>';
+                }
+                html += self.listEvent(event);
+            });
+            html += '</div></div>';
+            return html;
+        },
+
+        /**
+         * Search: ask the server for matching running and upcoming events of every month
+         */
+        runSearch: function($calendar) {
+            var self = this;
+            var data = $calendar.data('threecal');
+            var $input = $calendar.find('.threecal-search-input');
+            var term = $.trim(String($input.val() || '')).substr(0, 80);
+
+            if (term === '') {
+                self.clearSearch($calendar, false);
+                return;
+            }
+
+            var $panel = $calendar.find('.threecal-results');
+            $panel.attr('aria-busy', 'true');
+
+            $.ajax({
+                url: threecal_data.ajax_url,
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    action: 'threecal_get_events',
+                    search: term,
+                    category: data.category,
+                    location: data.location
+                },
+                success: function(response) {
+                    if (response && response.success) {
+                        var events = response.data || [];
+                        data.search = term;
+                        data.day = null;
+                        $calendar.find('.threecal-is-selected').removeClass('threecal-is-selected');
+                        $calendar.addClass('threecal-searching');
+                        var title;
+                        if (!events.length) {
+                            title = self.fill(threecal_data.i18n.no_events_for || 'No events for "{term}"', { term: term });
+                        } else if (events.length === 1) {
+                            title = self.fill(threecal_data.i18n.one_event_for || 'One event for "{term}"', { term: term });
+                        } else {
+                            title = self.fill(threecal_data.i18n.events_for || '{count} events for "{term}"', { count: events.length, term: term });
+                        }
+                        self.showResults($calendar, title, events.length ? events : null, threecal_data.i18n.reset_search, '', false);
+                        self.announce($calendar, title);
+                    } else {
+                        self.showLoadError($calendar);
+                    }
+                },
+                error: function() {
+                    self.showLoadError($calendar);
+                },
+                complete: function() {
+                    $panel.removeAttr('aria-busy');
+                }
+            });
+        },
+
+        /**
+         * End the search and show the month again (reloaded when the category changed meanwhile)
+         */
+        clearSearch: function($calendar, silent) {
+            var data = $calendar.data('threecal');
+            var wasSearching = data.search !== '';
+            data.search = '';
+            $calendar.removeClass('threecal-searching');
+            if (!wasSearching) {
+                return;
+            }
+            this.closeResults($calendar);
+            if (data.stale) {
+                this.loadMonth($calendar);
+            }
+            if (!silent) {
+                this.announce($calendar, threecal_data.i18n.all_events || '');
+            }
+        },
+
+        /**
+         * Day filter: the events of one day of the loaded month, listed under the grid
+         */
+        showDay: function($calendar, dateStr) {
+            var self = this;
+            var data = $calendar.data('threecal');
+            dateStr = String(dateStr || '');
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+                return;
+            }
+            // The first month comes from the server without event data: fetch it once
+            if (!data.loaded) {
+                self.fetchMonthData($calendar, function() {
+                    self.showDay($calendar, dateStr);
+                });
+                return;
+            }
+            var dayNumber = parseInt(dateStr.substr(8, 2), 10);
+            var events = (data.events || []).filter(function(event) {
+                if (event.month_only) {
+                    return false;
+                }
+                var days = (event.days && event.days.length) ? event.days : [event.day];
+                return days.indexOf(dayNumber) !== -1;
+            });
+
+            data.day = dateStr;
+            $calendar.find('.threecal-is-selected').removeClass('threecal-is-selected');
+            $calendar.find('td.threecal-day[data-date="' + dateStr + '"]').addClass('threecal-is-selected');
+
+            var dateText = self.formatDateYear(dateStr);
+            var title = self.fill(threecal_data.i18n.events_on || 'Events on {date}', { date: dateText });
+            var empty = self.fill(threecal_data.i18n.no_events_on || 'No events on {date}', { date: dateText });
+            self.showResults($calendar, title, events, threecal_data.i18n.all_events, empty, true, dateStr);
+            self.announce($calendar, events.length ? title : empty);
+        },
+
+        /**
+         * Event data of the month on screen, without touching the grid (for the day filter
+         * on the month the server rendered)
+         */
+        fetchMonthData: function($calendar, callback) {
+            var self = this;
+            var data = $calendar.data('threecal');
+            $.ajax({
+                url: threecal_data.ajax_url,
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    action: 'threecal_get_events',
+                    month: data.month,
+                    year: data.year,
+                    category: data.category,
+                    location: data.location
+                },
+                success: function(response) {
+                    if (response && response.success) {
+                        data.events = response.data || [];
+                        data.loaded = true;
+                        callback();
+                    } else {
+                        self.showLoadError($calendar);
+                    }
+                },
+                error: function() {
+                    self.showLoadError($calendar);
+                }
+            });
+        },
+
+        /**
+         * Fill the results panel under the grid and move the focus to its heading
+         */
+        showResults: function($calendar, title, events, resetLabel, emptyMessage, focusTitle, forceDate) {
+            var $panel = $calendar.find('.threecal-results');
+            var $body = $panel.find('.threecal-results-body');
+            $calendar.find('.threecal-load-error').remove();
+            $panel.find('.threecal-results-title').text(title);
+            $panel.find('.threecal-results-reset span').text(resetLabel || '');
+            $body.html(events === null ? '' : this.renderDayGroups(events, emptyMessage, forceDate || null));
+            this.bindListEvents($calendar, $body);
+            $panel.removeAttr('hidden');
+            if (focusTitle) {
+                $panel.find('.threecal-results-title').trigger('focus');
+            }
+        },
+
+        /**
+         * Hide the results panel and the day marker
+         */
+        closeResults: function($calendar) {
+            var data = $calendar.data('threecal');
+            data.day = null;
+            $calendar.find('.threecal-is-selected').removeClass('threecal-is-selected');
+            $calendar.find('.threecal-results').attr('hidden', 'hidden').find('.threecal-results-body').empty();
+        },
+
+        /**
+         * Text for screen readers (role=status). Cleared first so the same text is read again.
+         */
+        announce: function($calendar, text) {
+            var $live = $calendar.find('.threecal-announce');
+            $live.text('');
+            window.setTimeout(function() {
+                $live.text(text || '');
+            }, 60);
+        },
+
+        /**
+         * Replace {name} placeholders of a translated pattern
+         */
+        fill: function(pattern, values) {
+            return String(pattern || '').replace(/\{(\w+)\}/g, function(match, key) {
+                return Object.prototype.hasOwnProperty.call(values, key) ? String(values[key]) : match;
+            });
+        },
+
+        /**
+         * Parts of a Y-m-d string as numbers
+         */
+        dateParts: function(dateStr) {
+            var parts = String(dateStr || '').split('-');
+            return { year: parseInt(parts[0], 10), month: parseInt(parts[1], 10), day: parseInt(parts[2], 10) };
+        },
+
+        /**
+         * "October 24, 2026" in the pattern of the site language
+         */
+        formatDateYear: function(dateStr) {
+            var p = this.dateParts(dateStr);
+            if (!p.year || !p.month || !p.day) {
+                return String(dateStr || '');
+            }
+            return this.fill(threecal_data.i18n.list_date_year || '{month} {day}, {year}', { day: p.day, month: threecal_data.i18n.months[p.month - 1] || '', year: p.year });
+        },
+
+        /**
+         * "October 2026"
+         */
+        formatMonthYear: function(dateStr) {
+            var p = this.dateParts(dateStr);
+            return (threecal_data.i18n.months[p.month - 1] || '') + ' ' + (p.year || '');
+        },
+
+        /**
+         * Full weekday name of a Y-m-d string
+         */
+        weekdayName: function(dateStr) {
+            var p = this.dateParts(dateStr);
+            var d = new Date(p.year, p.month - 1, p.day);
+            var names = threecal_data.i18n.weekdays_full || threecal_data.i18n.weekdays;
+            return names[d.getDay()] || '';
         },
 
         /**
@@ -588,7 +945,8 @@
             }
 
             if (url) {
-                html += '<a href="' + this.escapeHtml(url) + '" class="threecal-button threecal-button-ghost threecal-modal-event-url" target="_blank" rel="noopener">';
+                var rel = (typeof event.url_rel === 'string' && /^[a-z ]+$/.test(event.url_rel)) ? event.url_rel : 'noopener';
+                html += '<a href="' + this.escapeHtml(url) + '" class="threecal-button threecal-button-ghost threecal-modal-event-url" target="_blank" rel="' + rel + '">';
                 html += this.icon('external-link') + ' ' + this.escapeHtml(threecal_data.i18n.more_info);
                 html += '</a>';
             }
@@ -647,16 +1005,6 @@
                     }
                 }
             });
-        },
-
-        /**
-         * Show all events of a day by expanding the hidden ones
-         */
-        showDayEvents: function($link) {
-            var $events = $link.closest('.threecal-day-events');
-            $events.find('.threecal-event-extra').show();
-            $link.attr('aria-expanded', 'true').hide();
-            $events.find('.threecal-event-extra').first().trigger('focus');
         },
 
         /**

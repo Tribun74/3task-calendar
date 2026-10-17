@@ -358,6 +358,10 @@
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 
+.threecal-field .threecal-organizer-url {
+    margin-top: 8px;
+}
+
 .threecal-field-row {
     display: flex;
     gap: 16px;
@@ -2076,4 +2080,67 @@
 .threecal-day-fields[hidden],
 .threecal-recurrence-fields[hidden] {
     display: none;
+}
+
+/* "Fill in from this website" (since 1.7.0) */
+.threecal-url-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.threecal-url-row .large-text {
+    flex: 1 1 auto;
+}
+
+.threecal-url-row .threecal-prefill-btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+.threecal-prefill-result {
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-left: 3px solid #8c8f94;
+    background: #f6f7f7;
+    font-size: 13px;
+}
+
+.threecal-prefill-result.is-ok {
+    border-left-color: #00a32a;
+}
+
+.threecal-prefill-result.is-error {
+    border-left-color: #d63638;
+}
+
+@media (max-width: 782px) {
+    .threecal-url-row {
+        flex-wrap: wrap;
+    }
+}
+
+/* Schema check (since 1.7.0) */
+.threecal-schema-doktor .threecal-schema-ok {
+    color: #00a32a;
+    font-weight: 600;
+}
+
+.threecal-schema-doktor .threecal-schema-no {
+    color: #996800;
+}
+
+/* Submitted events (since 1.7.0) */
+.threecal-badge-submitted {
+    display: inline-block;
+    align-self: flex-start;
+    width: auto;
+    margin-left: 6px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #2271b1;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    vertical-align: middle;
 }

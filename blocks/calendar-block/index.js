@@ -9,6 +9,7 @@
     var useBlockProps = blockEditor.useBlockProps;
     var PanelBody = components.PanelBody;
     var SelectControl = components.SelectControl;
+    var ToggleControl = components.ToggleControl;
     var ServerSideRender = serverSideRender;
     var __ = i18n.__;
 
@@ -40,6 +41,10 @@
             theme: {
                 type: 'string',
                 default: ''
+            },
+            showSearch: {
+                type: 'boolean',
+                default: true
             }
         },
 
@@ -91,6 +96,14 @@
                             options: categoryOptions,
                             onChange: function(value) {
                                 props.setAttributes({ category: parseInt(value, 10) || 0 });
+                            }
+                        }),
+                        el(ToggleControl, {
+                            label: __('Show search field', '3task-calendar'),
+                            help: __('Visitors search in title, description, location and city. Results appear as a list grouped by day.', '3task-calendar'),
+                            checked: attributes.showSearch !== false,
+                            onChange: function(value) {
+                                props.setAttributes({ showSearch: !!value });
                             }
                         })
                     )

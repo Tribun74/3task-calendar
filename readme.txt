@@ -1,10 +1,10 @@
 === 3task Calendar ===
 Contributors: 3task
 Tags: event calendar, recurring events, ical, gdpr, events
-Requires at least: 5.8
+Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.6.0
+Stable tag: 1.8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,8 @@ Event calendar without Google, CDN or tracking. Set dates right in your posts, r
 **3task Calendar** is an event calendar for clubs, practices, schools and small businesses that want to publish dates without sending visitor data to third parties. Everything runs on your own WordPress: no external fonts, no CDN, no tracking, no account.
 
 Dates can come straight from your posts. Set a date while you write, for example the cinema release of a film, a book release or a match day, and the post appears in the calendar by itself, with its title, link and image. A date you already keep in a custom field (Advanced Custom Fields, Meta Box or any other plugin) can be used without entering anything twice.
+
+**Live demo:** [watchguide.net/film-events/](https://watchguide.net/film-events/) runs the plugin with more than 200 festival dates, month and list view, partner highlighting and the event schema. A smaller demo with dates from posts: [3task.de](https://www.3task.de/wordpress-kalender-termine-im-beitrag/).
 
 Visitors can add a single event to their own calendar or subscribe to the whole calendar (or one category) on their phone. Changes appear there automatically.
 
@@ -31,14 +33,23 @@ Visitors can add a single event to their own calendar or subscribe to the whole 
 * **Recurring Events**: Daily, weekly, every two weeks, monthly or yearly, with an end date; single dates can be cancelled, removed or changed on their own
 * **Cancelled Events**: A cancelled date stays visible, crossed out, so nobody turns up in vain; subscribers and search engines get the cancellation too
 * **iCal Export and Subscription**: "Add to my calendar" for every event and a subscription feed (all events or one category) for Google Calendar, Apple Calendar, Outlook and Thunderbird
-* **German Translation**: Informal (du) and formal (Sie) German included
+* **Translations Included**: German (du and Sie) complete; Spanish, French and Italian for everything visitors see (calendar, lists, popup, calendar file, submission form)
 * **Unlimited Categories**: Organize events with color-coded categories
 * **Month and List Views**: Multi-day events appear on every day they cover
-* **Three Designs**: Clear (light), Accent (bold color header) and Night (dark), with your own accent color; events take their category color automatically
+* **Search and Day Filter**: A search field in the calendar and in event lists finds events by title, description, location and city, with results grouped by day; a click on a day shows that day's events under the month grid. No external service, nothing is stored
+* **Four Designs**: Clear (light), Accent (bold color header), Night (dark) and Theme colors (takes colors and font from your theme, no own look), with your own accent color; events take their category color automatically
+* **Highlighted Categories**: Mark a category, and its events get a frame in the category color and a badge with the category name, for partners, sponsors or your own events
+* **Links You Control**: Links from events to other websites are nofollow and open in a new window; switch single categories or the whole calendar to follow
+* **Reminder Without an Account**: The downloaded calendar file can carry a reminder (30 minutes to 2 days before); the visitor's own calendar app shows it, your site stores nothing
+* **Print**: One click prints the month on screen or the list, without controls, readable in black and white
+* **Visitors Submit Events**: Shortcode `[threecal_submit]` shows a form; every submission is saved as a draft that only you can publish. Spam protection without external services, optional e-mail of the submitter for questions, no IP address stored
+* **JSON Feed for AI Search and Apps**: `/wp-json/threecal/v1/events` lists the upcoming events with ISO dates and time zone, place, organizer, categories and calendar file; filter by category and date, calendar pages announce the feed, and the settings hand you a block for your llms.txt
+* **Schema Check**: Settings show the next 20 events and tell you which ones get event markup, which of the five places they take and why one gets none, with a link to Google's Rich Results Test
+* **Paste the Link, Get the Event**: Enter the address of an event's website and click "Fill in from this website". Title, date, description, location and organizer are read from that page (schema.org event markup or Open Graph tags) into the empty fields
 * **Responsive**: Adapts to small screens
 * **Gutenberg Block**: Live preview in the editor, choose view, design and category
 * **Shortcodes**: Flexible placement options
-* **Schema.org SEO**: Event markup with ISO dates and time zone for events at a real place; office hours, holidays or release dates can be excluded per category, as Google requires
+* **Schema.org SEO**: Event markup with ISO dates and time zone for events at a real place; office hours, holidays or release dates can be excluded per category, as Google requires. The organizer is set per event, a site that only lists events is never named as organizer
 * **Route Link**: "Plan route" opens OpenStreetMap only when the visitor clicks it
 * **Accessible Popup**: Dialog role, keyboard focus and Escape to close
 * **Mobile List**: On small screens the calendar starts in list view
@@ -56,7 +67,7 @@ Visitors can add a single event to their own calendar or subscribe to the whole 
 **Display Calendar:**
 `[threecal]`
 
-Options: `view` (month, list), `category`, `location`, `theme`, `show_filters`, `show_legend`, `show_subscribe`, `mobile_list` (true/false).
+Options: `view` (month, list), `category`, `location`, `theme` (default, accent, dark, site), `show_filters`, `show_legend`, `show_subscribe`, `show_print`, `show_search`, `mobile_list` (true/false).
 
 **With Options:**
 `[threecal view="month" category="1"]`
@@ -64,7 +75,10 @@ Options: `view` (month, list), `category`, `location`, `theme`, `show_filters`, 
 **Event List:**
 `[threecal_events limit="10"]`
 
-Options: `view` (list, grid, compact, poster), `category`, `location`, `limit` (per page), `columns`, `show_past`, `show_pagination`, `month` (current, next or a month such as 2026-10), `running` (number of days).
+Options: `view` (list, grid, compact, poster), `category`, `location`, `limit` (per page), `columns`, `show_past`, `show_pagination`, `show_search`, `month` (current, next or a month such as 2026-10), `day` (one day such as 2026-10-24), `running` (number of days).
+
+**Events of One Day:**
+`[threecal_events day="2026-10-24"]`
 
 **A Whole Month, for Example "Releases in October":**
 `[threecal_events view="poster" month="2026-10" category="1"]`
@@ -109,6 +123,10 @@ Use the shortcode `[threecal]` or add the 3task Calendar block from the Gutenber
 
 Yes! Each shortcode or block is an independent calendar. You can filter by category.
 
+= Can visitors search for events? =
+
+Yes. The calendar toolbar and every event list carry a search field (hide it with `show_search="false"`). The search looks at title, description, location name and city, part of a word is enough, and upper or lower case does not matter, umlauts included. Results appear as a list grouped by day, together with the category filter if one is chosen. Enter searches, Escape clears the field, and screen readers get the number of results announced. Nothing is stored and no external service is involved. In the month view a click on a day number or on "+N more" shows the events of that day under the grid; "All events" closes the list again.
+
 = How do I style the calendar? =
 
 The calendar automatically adapts to your theme. You can also add custom CSS for further customization.
@@ -148,12 +166,40 @@ Columns (first line, upper or lower case does not matter):
 * `category`: name, several separated by `|`; missing categories are created
 * `location_name`, `address`, `postal_code`, `city`, `country` (two letters, e.g. DE): a location with the same name and city is used again
 * `status`: draft, publish or cancelled; overrides the status chosen on the import page
+* `organizer_name`, `organizer_url`: who runs the event; leave empty if you only list it
 
 When an event is updated, it keeps its status and the columns that are not in the file. On the command line: `wp threecal import events.csv --dry-run` checks the file, `wp threecal import events.csv --status=publish` imports it.
 
 = Why do some events not appear in the event schema? =
 
+Since 1.7.0 the settings page answers this per event: the schema check lists the next 20 events with "yes, place n of 5" or the reason (only the month known, no location, excluded category, removed by a filter, five places taken).
+
+
 Google only accepts events that take place at a real location on a concrete date, and it does not allow office hours or release dates as events. Events without a location or with only the month known get no markup, and every category can be excluded with "Not an event for search engines".
+
+= Who is named as the organizer in the event schema? =
+
+Only the organizer entered for the event under "Organizer" (or in the CSV columns `organizer_name` and `organizer_url`). Without an entry the markup has no organizer. Up to version 1.6.0 the plugin used the name of the website, which was wrong for events the site only lists. Developers can change the whole markup of an event with the filter `threecal_event_schema`; returning an empty value prints no markup for that event:
+
+`add_filter( 'threecal_event_schema', function ( $schema, $event, $page_url ) { if ( empty( $schema['organizer'] ) ) { $schema['organizer'] = array( '@type' => 'Organization', 'name' => get_bloginfo( 'name' ), 'url' => home_url( '/' ) ); } return $schema; }, 10, 3 );`
+
+= Why are links to other websites nofollow? =
+
+Since 1.7.0 a link from an event to another website carries rel="nofollow noopener" and opens in a new window. Most calendars list events of other organisers, and search engines should not read every listing as your recommendation. You decide: Settings > "Links to other websites" switches the whole calendar to follow, and the category form switches single categories to follow, for example partners that link back to you. Developers can change the attributes per event with the filter `threecal_event_link_attributes` (since 1.6.3), and `threecal_event_card_classes` adds CSS classes to an event card:
+
+`add_filter( 'threecal_event_link_attributes', function ( $attrs, $event, $context ) { if ( 42 === (int) $event->id ) { $attrs['rel'] = 'sponsored noopener'; } return $attrs; }, 10, 3 );`
+
+= Can visitors submit events? =
+
+Yes. Put `[threecal_submit]` on a page (attributes: `title="…"` for a heading, `success="…"` for your own thank-you text). A submission is saved as a draft with the typed location and an optional e-mail address of the submitter, so you can ask back. The event appears nowhere until you publish it. The event list has a "Submitted" view and the dashboard tells you how many are waiting. Spam protection works without external services: a hidden field that humans do not fill, a minimum time between showing and sending the form, a nonce, length limits and at most ten submissions per hour from one connection. The connection is only hashed for that hour and never stored with the event.
+
+= Is there a JSON feed, and what is llms.txt? =
+
+Yes: `/wp-json/threecal/v1/events` returns the upcoming events as JSON with ISO 8601 dates and time zone, place, organizer, categories, link and the calendar file of every event. Filters: `?category=slug`, `?from=YYYY-MM-DD`, `?to=YYYY-MM-DD`, `?day=YYYY-MM-DD` (one day, past days allowed), `?search=word` (title, description, location, city), `?limit=200`. Pages with a calendar announce the feed with `<link rel="alternate" type="application/json">`. An llms.txt in the root of your website tells AI search engines what matters on your site; the settings page gives you a ready block that names the feed and your calendar pages.
+
+= Can I fill in an event from its website? =
+
+Yes. Paste the address of the event into "Event URL" and click "Fill in from this website". The plugin reads the schema.org event markup of that page (most festival and venue sites have it) or, if there is none, the Open Graph tags, and fills in title, date, description, organizer and location. Only empty fields are filled, so you keep what you typed. A location that already exists under Locations with the same name is selected; a new one is shown as a hint so you can add it.
 
 = How do visitors subscribe to the calendar? =
 
@@ -173,7 +219,9 @@ Please use the [WordPress.org support forum](https://wordpress.org/support/plugi
 
 == External Services ==
 
-3task Calendar does not connect to any external service. The "Plan route" link of an event opens OpenStreetMap in a new tab only when a visitor clicks it; nothing is sent before that.
+3task Calendar does not connect to any external service by itself. The "Plan route" link of an event opens OpenStreetMap in a new tab only when a visitor clicks it; nothing is sent before that.
+
+"Fill in from this website" in the event form (since 1.7.0): when you click the button, your server fetches the one address you entered in the "Event URL" field, reads the event markup or Open Graph tags on that page and fills in the empty fields. Nothing is fetched without the click, no other address is contacted, and nothing about your site is sent except the usual request (the user agent names the plugin and your site address so the website owner knows who asked).
 
 == Screenshots ==
 
@@ -183,12 +231,61 @@ Please use the [WordPress.org support forum](https://wordpress.org/support/plugi
 4. The Night design for dark websites
 5. Admin dashboard with upcoming events and quick actions
 6. Editing a recurring event: repeat rule, end date, categories and location
-7. Design tab with a preview of all three designs
+7. Design tab with a preview of the designs
 8. Event list with series, categories and status
 9. Dates from posts: set the release date in the post sidebar and the post appears in the calendar by itself
 10. Poster view with the post images, and the date box with "Add to my calendar" in a post
+11. Design "Theme colors": the calendar takes colors and font from the theme (Twenty Twenty-Five)
+12. Highlighted category: partner events with frame and badge in poster and list cards
+13. Schema check in the settings: which events get event markup and why not
+14. Event form with "Fill in from this website"
+15. Visitors submit events: the form on the site and the "Submitted" view in the event list
+16. Print view of the month
+17. Search in the calendar: results of all months grouped by day, combined with the category filter
+18. Day filter: a click on a day lists its events under the month grid
+19. Event list [threecal_events] with its own search field and result count
 
 == Changelog ==
+
+= 1.8.0 =
+* NEW: Search field in the calendar toolbar and in event lists ([threecal_events]). The search looks at title, description, location name and city, part of a word is enough, case does not matter (umlauts included). Results are listed grouped by day, combinable with the category filter, with "No events for …" and a reset button. Shortcode and block attribute show_search="false" hides the field
+* NEW: Day filter in the month view: a click on a day number, a day cell or "+N more" lists the events of that day under the grid, with "Events on …" and an "All events" button. The list reuses the list view
+* NEW: Shortcode attribute day="2026-10-24" for [threecal_events] lists the events of one day on the server
+* NEW: JSON feed parameters search and day (same rules as the calendar)
+* Search requests use the same public request as the month navigation, without nonce, so page caches keep working; the term is cleaned and cut to 80 characters, nothing is logged
+* Keyboard: Enter searches, Escape clears; results and day lists are announced to screen readers
+* Day numbers in the month grid are buttons now, so the day filter works with the keyboard
+* German (du and Sie), Spanish, French and Italian for all new texts
+
+= 1.7.0 =
+* NEW: Design "Theme colors": the calendar takes background, text and accent color and the font from your theme (theme.json), so it looks like the rest of your site without any CSS of your own
+* NEW: Highlight a category: its events get a frame in the category color and a badge with the category name (category form)
+* NEW: Links from events to other websites are nofollow and open in a new window. Setting "Links to other websites" switches the whole calendar to follow, the category form switches single categories to follow, for example partners that link back to you
+* NEW: Reminder in the calendar file: choose 30 minutes to 2 days before the event under Settings. The alarm travels with the downloaded file, nothing is stored on your site
+* NEW: Print button in the calendar toolbar (shortcode attribute show_print="false" hides it) and a print stylesheet for month grid and lists
+* NEW: Spanish, French and Italian for everything visitors see (admin texts follow through translate.wordpress.org)
+* NEW: Shortcode [threecal_submit]: visitors submit events, you check and publish them (drafts with the submitted data, "Submitted" view and badge in the event list, notice on the dashboard, optional e-mail to the admin, default category under Settings). Spam protection: hidden field, minimum time, nonce, length limits, ten submissions per hour and connection; no IP address stored
+* NEW: JSON feed /wp-json/threecal/v1/events (from, to, category, limit) for AI search engines, apps and other sites; pages with a calendar carry a link rel="alternate" to it; Settings show the address and a block for the site's llms.txt
+* NEW: Schema check under Settings: the next 20 events with "yes, place n of 5" or the reason for no markup (schema off, only month known, no location, excluded category, removed by filter, places taken), plus links to Google's Rich Results Test for your calendar pages
+* NEW: "Fill in from this website" in the event form: the page behind the event URL is read once on click and its event markup (schema.org Event as JSON-LD) or Open Graph tags fill the empty fields. A location that already exists under Locations is selected by name
+* The filter threecal_event_link_attributes runs after the new link rule, so existing code keeps working
+* Requires WordPress 6.2 or newer (theme.json reading); older sites keep 1.6.3
+
+= 1.6.3 =
+* NEW: Filter threecal_event_link_attributes sets the attributes of the link to an event's URL per event (for example rel="nofollow noopener" and target="_blank" for events of other organisers). It runs for the event card, the poster card, the single event view, the upcoming list and the details popup
+* NEW: Filter threecal_event_card_classes adds CSS classes to an event card or poster card per event, for example to highlight partner events
+* Readme: link to a live demo (watchguide.net/film-events/)
+
+= 1.6.2 =
+* FIXED: The five places in the event schema now go to the next five events that really get markup. Events without a location, in a category excluded from the schema or emptied by the threecal_event_schema filter took a place before and fewer than five events were marked up
+* FIXED: The event schema no longer uses the site icon or logo as image of an event. It uses the image of the event, else the featured image of the page with the calendar, else no image
+
+= 1.6.1 =
+* FIXED: The event schema no longer names the website as organizer of every event. Events the site only lists had the site as organizer, which is wrong and against Google's event guidelines
+* NEW: Organizer per event (name and website) in the event form; the event schema uses it, without an entry it has no organizer
+* NEW: CSV import columns organizer_name and organizer_url
+* NEW: Filter threecal_event_schema to change or suppress the markup of an event
+* Repetitions of a series take over the organizer of the series
 
 = 1.6.0 =
 * NEW: "Only the month is known" for events such as festivals: lists, posters, upcoming events, the single event and the popup show "July 2027, date to be announced"; the month view shows them in a bar above the grid, the mini calendar leaves them out
@@ -300,6 +397,21 @@ Please use the [WordPress.org support forum](https://wordpress.org/support/plugi
 * German translation included
 
 == Upgrade Notice ==
+
+= 1.8.0 =
+Search and day filter: a search field in the calendar and in event lists (hide with show_search="false"), a click on a day lists its events under the month grid, day="YYYY-MM-DD" for [threecal_events], search and day in the JSON feed.
+
+= 1.7.0 =
+Links from events to other websites are now nofollow and open in a new window. If you want them as before, choose "follow" under Settings > Links to other websites. New: design "Theme colors", highlighted categories, reminder in the calendar file, print button.
+
+= 1.6.3 =
+Two new filters for developers: link attributes and card classes per event. No change without them.
+
+= 1.6.2 =
+Event schema: events without markup no longer take one of the five places, and the site icon or logo is no longer used as event image. Give your events their own image.
+
+= 1.6.1 =
+The event schema names an organizer only when one is entered for the event, no longer the website. Add the organizer to your own events under "Organizer".
 
 = 1.6.0 =
 Events with only the month known ("July 2027, date to be announced") and CSV import with preview and WP-CLI command. No change for existing events.

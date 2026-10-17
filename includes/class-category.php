@@ -291,6 +291,11 @@ class ThreeCal_Category {
 			array( '%d' )
 		);
 
+		// Rules of this category go with it.
+		self::set_schema_excluded( $this->id, false );
+		self::set_highlighted( $this->id, false );
+		self::set_follow( $this->id, false );
+
 		// Delete category.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table for categories.
 		return $wpdb->delete(
@@ -416,5 +421,51 @@ class ThreeCal_Category {
 			$ids[] = absint( $id );
 		}
 		update_option( 'threecal_no_schema_categories', array_values( array_unique( $ids ) ), false );
+	}
+
+	/**
+	 * Categories whose events are highlighted (frame and badge). Since 1.7.0
+	 *
+	 * @return int[]
+	 */
+	public static function highlighted_ids() {
+		return array_values( array_filter( array_map( 'absint', (array) get_option( 'threecal_highlight_categories', array() ) ) ) );
+	}
+
+	/**
+	 * Highlight the events of a category or not. Since 1.7.0
+	 *
+	 * @param int  $id          Category ID.
+	 * @param bool $highlighted True to highlight.
+	 */
+	public static function set_highlighted( $id, $highlighted ) {
+		$ids = array_diff( self::highlighted_ids(), array( absint( $id ) ) );
+		if ( $highlighted ) {
+			$ids[] = absint( $id );
+		}
+		update_option( 'threecal_highlight_categories', array_values( array_unique( $ids ) ), false );
+	}
+
+	/**
+	 * Categories whose links to other websites are follow links. Since 1.7.0
+	 *
+	 * @return int[]
+	 */
+	public static function follow_ids() {
+		return array_values( array_filter( array_map( 'absint', (array) get_option( 'threecal_follow_categories', array() ) ) ) );
+	}
+
+	/**
+	 * Let links of a category's events be follow links or not. Since 1.7.0
+	 *
+	 * @param int  $id     Category ID.
+	 * @param bool $follow True for follow links.
+	 */
+	public static function set_follow( $id, $follow ) {
+		$ids = array_diff( self::follow_ids(), array( absint( $id ) ) );
+		if ( $follow ) {
+			$ids[] = absint( $id );
+		}
+		update_option( 'threecal_follow_categories', array_values( array_unique( $ids ) ), false );
 	}
 }

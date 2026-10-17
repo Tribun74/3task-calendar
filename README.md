@@ -22,10 +22,17 @@ An event calendar for clubs, practices, schools and small businesses that want t
 - **Recurring events:** daily, weekly, every two weeks, monthly or yearly; single dates can be cancelled or removed
 - **iCal:** "Add to my calendar" for every event and a subscription feed for Google Calendar, Apple Calendar, Outlook and Thunderbird
 - **Views:** month, list, cards, compact, poster and a mini calendar for sidebars
-- **Three designs:** Clear, Accent and Night, with your own accent color
+- **Four designs:** Clear, Accent, Night and "Theme colors", which takes colors and font from your theme (theme.json)
+- **Search and day filter:** a search field in the calendar and in event lists, a click on a day lists its events under the month grid
+- **Highlighted categories:** partner events with a frame and a badge; links to other websites are nofollow by default, single categories or the whole calendar can be set to follow
+- **Visitors submit events:** `[threecal_submit]` with spam protection without external services; submissions wait as drafts
+- **Fill in from a website:** paste the event URL and the form reads title, date, place and organizer from its schema.org or Open Graph markup
+- **Schema check:** the settings show which events get event markup and why not
+- **JSON feed and llms.txt block:** `/wp-json/threecal/v1/events` with ISO dates, place, organizer and categories, for AI search and apps
+- **Reminder in the calendar file** and a **print view** of the month
 - **Event schema** for events at a real place, switchable per category
 - **Accessible popup**, keyboard support, list view on small screens
-- **German included:** informal (du) and formal (Sie)
+- **Translations included:** German (du and Sie) complete; Spanish, French and Italian for everything visitors see
 - **Privacy:** no external requests; the route link opens OpenStreetMap only on click
 
 Every feature in this plugin is unlocked.
@@ -41,17 +48,20 @@ Every feature in this plugin is unlocked.
 [threecal_upcoming limit="5"]
 [threecal_mini]
 [threecal_post_date]
+[threecal_submit]
+[threecal view="month" theme="site" show_print="true"]
+[threecal_events day="2026-10-24"]
 ```
 
 ## Installation
 
 Install from [WordPress.org](https://wordpress.org/plugins/3task-calendar/), or upload the folder `3task-calendar` to `/wp-content/plugins/` and activate it. Then open **3task Calendar** in the admin menu and add your first event, or switch on "Dates from posts" in the tab **Posts**.
 
-Requires WordPress 5.8 and PHP 7.4.
+Requires WordPress 6.2 and PHP 7.4.
 
 ## Changelog
 
-The full changelog is in [readme.txt](readme.txt). Latest release: **1.6.0** (9 October 2026) with dates where only the month is known and a CSV import with preview and WP-CLI command.
+The full changelog is in [readme.txt](readme.txt). Latest release: **1.8.0** (17 October 2026) with search and day filter, the "Theme colors" design, highlighted categories, visitor submissions, fill-in from a website, schema check, JSON feed and Spanish, French and Italian translations.
 
 ## Pro add-on
 

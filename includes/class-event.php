@@ -143,6 +143,46 @@ class ThreeCal_Event {
 	const IMPORT_KEY = 'import_key';
 
 	/**
+	 * Settings key for the organizer of the event (name and URL).
+	 *
+	 * @since 1.6.1
+	 */
+	const ORGANIZER_KEY = 'organizer';
+
+	/**
+	 * Organizer of this event.
+	 *
+	 * @since 1.6.1
+	 * @return array Name and URL, both empty strings when nothing is set.
+	 */
+	public function get_organizer() {
+		$organizer = (array) $this->get_setting( self::ORGANIZER_KEY, array() );
+		return array(
+			'name' => isset( $organizer['name'] ) ? (string) $organizer['name'] : '',
+			'url'  => isset( $organizer['url'] ) ? (string) $organizer['url'] : '',
+		);
+	}
+
+	/**
+	 * Set the organizer of this event. Both values empty removes it.
+	 *
+	 * @since 1.6.1
+	 * @param string $name Name of the organizer.
+	 * @param string $url  Website of the organizer.
+	 */
+	public function set_organizer( $name, $url ) {
+		$name = sanitize_text_field( (string) $name );
+		$url  = esc_url_raw( (string) $url, array( 'http', 'https' ) );
+		if ( '' === $name && '' === $url ) {
+			if ( is_array( $this->settings ) ) {
+				unset( $this->settings[ self::ORGANIZER_KEY ] );
+			}
+			return;
+		}
+		$this->set_setting( self::ORGANIZER_KEY, array( 'name' => $name, 'url' => $url ) );
+	}
+
+	/**
 	 * Whether only the month of this event is known ("July 2027, date to be announced").
 	 *
 	 * @since 1.6.0
@@ -337,14 +377,75 @@ class ThreeCal_Event {
 			$values[] = self::month_only_like();
 		}
 
-		if ( ! empty( $args['search'] ) ) {
-			$where[]     = '(e.title LIKE %s OR e.description LIKE %s)';
-			$search_term = '%' . $wpdb->esc_like( $args['search'] ) . '%';
-			$values[]    = $search_term;
-			$values[]    = $search_term;
+		$search = self::sanitize_search( isset( $args['search'] ) ? $args['search'] : '' );
+		if ( '' !== $search ) {
+			// Title, description, name and city of the location. Since 1.8.0 the case variants make
+			// the search case-insensitive for umlauts too, whatever the collation of the table is.
+			$parts = array();
+			foreach ( self::search_variants( $search ) as $variant ) {
+				$like     = '%' . $wpdb->esc_like( $variant ) . '%';
+				$parts[]  = 'e.title LIKE %s';
+				$values[] = $like;
+				$parts[]  = 'e.description LIKE %s';
+				$values[] = $like;
+				$parts[]  = 'e.location_id IN (SELECT id FROM ' . $wpdb->prefix . 'threecal_locations WHERE name LIKE %s OR city LIKE %s)';
+				$values[] = $like;
+				$values[] = $like;
+			}
+			$where[] = '(' . implode( ' OR ', $parts ) . ')';
 		}
 
 		return array( implode( ' AND ', $where ), $values );
+	}
+
+	/**
+	 * Longest search term the calendar accepts.
+	 *
+	 * @since 1.8.0
+	 */
+	const SEARCH_MAX_LENGTH = 80;
+
+	/**
+	 * Clean a search term from a visitor: plain text, trimmed, at most 80 characters.
+	 * Callers pass superglobals through wp_unslash() first.
+	 *
+	 * @since 1.8.0
+	 * @param mixed $raw Raw input.
+	 * @return string Empty string when nothing usable is left.
+	 */
+	public static function sanitize_search( $raw ) {
+		if ( ! is_scalar( $raw ) ) {
+			return '';
+		}
+		$term = sanitize_text_field( (string) $raw );
+		if ( function_exists( 'mb_substr' ) ) {
+			$term = mb_substr( $term, 0, self::SEARCH_MAX_LENGTH, 'UTF-8' );
+		} else {
+			$term = substr( $term, 0, self::SEARCH_MAX_LENGTH );
+		}
+		return trim( $term );
+	}
+
+	/**
+	 * The term as typed plus its lower, upper and capitalised spelling (only the ones that differ).
+	 *
+	 * @since 1.8.0
+	 * @param string $term Clean search term.
+	 * @return string[]
+	 */
+	private static function search_variants( $term ) {
+		$variants = array( $term );
+		if ( function_exists( 'mb_strtolower' ) ) {
+			$lower      = mb_strtolower( $term, 'UTF-8' );
+			$variants[] = $lower;
+			$variants[] = mb_strtoupper( $term, 'UTF-8' );
+			$variants[] = mb_strtoupper( mb_substr( $lower, 0, 1, 'UTF-8' ), 'UTF-8' ) . mb_substr( $lower, 1, null, 'UTF-8' );
+		} else {
+			$variants[] = strtolower( $term );
+			$variants[] = strtoupper( $term );
+			$variants[] = ucfirst( strtolower( $term ) );
+		}
+		return array_values( array_unique( $variants ) );
 	}
 
 	/**
@@ -859,6 +960,8 @@ class ThreeCal_Event {
 			$child->status          = ( isset( $cancelled[ substr( $start, 0, 10 ) ] ) && 'published' === $this->status ) ? 'cancelled' : $this->status;
 			$child->parent_id       = $this->id;
 			$child->settings        = array();
+			$organizer              = $this->get_organizer();
+			$child->set_organizer( $organizer['name'], $organizer['url'] );
 
 			if ( $child->save() ) {
 				$child->set_categories( $cat_ids );

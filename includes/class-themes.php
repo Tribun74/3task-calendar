@@ -55,6 +55,12 @@ class ThreeCal_Themes {
 				'accent'      => '#38bdf8',
 				'style'       => '',
 			),
+			'site'    => array(
+				'label'       => __( 'Theme colors', '3task-calendar' ),
+				'description' => __( 'Takes colors and font from your theme (theme.json), so the calendar looks like the rest of your site.', '3task-calendar' ),
+				'accent'      => '#4f46e5',
+				'style'       => '',
+			),
 		);
 
 		/**
@@ -144,7 +150,95 @@ class ThreeCal_Themes {
 	 */
 	public static function wrapper_style( $theme ) {
 		$accent = self::accent( $theme );
-		return '--tc-accent:' . $accent . ';--tc-accent-ink:' . self::ink( $accent ) . ';';
+		$style  = '--tc-accent:' . $accent . ';--tc-accent-ink:' . self::ink( $accent ) . ';';
+		if ( 'site' === $theme ) {
+			$site = self::site_vars();
+			if ( ! empty( $site['accent'] ) && ! self::accent_from_settings() ) {
+				$style = '--tc-accent:' . $site['accent'] . ';--tc-accent-ink:' . self::ink( $site['accent'] ) . ';';
+			}
+			foreach ( array( 'surface', 'text', 'font' ) as $key ) {
+				if ( ! empty( $site[ $key ] ) ) {
+					$style .= '--tc-' . $key . ':' . $site[ $key ] . ';';
+				}
+			}
+		}
+		return $style;
+	}
+
+	/**
+	 * Did the user set an accent color in the settings?
+	 *
+	 * @since 1.7.0
+	 * @return bool
+	 */
+	private static function accent_from_settings() {
+		$settings = get_option( 'threecal_settings', array() );
+		return ! empty( $settings['accent_color'] ) && (bool) sanitize_hex_color( $settings['accent_color'] );
+	}
+
+	/**
+	 * Colors and font of the active theme for the design "Theme colors".
+	 *
+	 * Reads theme.json through WordPress: the accent is the first palette color whose slug
+	 * starts with "accent" or "primary", else the link color, else the contrast color. Surface
+	 * and text come from the global background and text color, the font from the body font.
+	 * Preset variables are resolved against the theme palette so the values work in a style
+	 * attribute; a font stays a var() because the theme prints that preset itself.
+	 * Themes without theme.json get an empty array and the design falls back to "Clear".
+	 *
+	 * @since 1.7.0
+	 * @return array accent, surface, text, font (hex colors or empty).
+	 */
+	public static function site_vars() {
+		static $vars = null;
+		if ( null !== $vars ) {
+			return $vars;
+		}
+		$vars = array();
+		if ( ! function_exists( 'wp_theme_has_theme_json' ) || ! wp_theme_has_theme_json() ) {
+			return $vars;
+		}
+		$palette = array();
+		$settings = wp_get_global_settings( array( 'color', 'palette' ) );
+		foreach ( array( 'theme', 'default', 'custom' ) as $group ) {
+			foreach ( (array) ( isset( $settings[ $group ] ) ? $settings[ $group ] : array() ) as $entry ) {
+				if ( ! empty( $entry['slug'] ) && ! empty( $entry['color'] ) && sanitize_hex_color( $entry['color'] ) ) {
+					$palette[ $entry['slug'] ] = $entry['color'];
+				}
+			}
+		}
+		$resolve = function ( $value ) use ( $palette ) {
+			$value = trim( (string) $value );
+			if ( preg_match( '/^var\(--wp--preset--color--([a-z0-9-]+)\)$/i', $value, $m ) ) {
+				return isset( $palette[ $m[1] ] ) ? $palette[ $m[1] ] : '';
+			}
+			return sanitize_hex_color( $value ) ? $value : '';
+		};
+		$styles = wp_get_global_styles();
+		$vars['surface'] = $resolve( isset( $styles['color']['background'] ) ? $styles['color']['background'] : '' );
+		$vars['text']    = $resolve( isset( $styles['color']['text'] ) ? $styles['color']['text'] : '' );
+		$accent = '';
+		foreach ( $palette as $slug => $color ) {
+			if ( 0 === strpos( $slug, 'accent' ) || 0 === strpos( $slug, 'primary' ) ) {
+				$accent = $color;
+				break;
+			}
+		}
+		if ( ! $accent ) {
+			$accent = $resolve( isset( $styles['elements']['link']['color']['text'] ) ? $styles['elements']['link']['color']['text'] : '' );
+		}
+		if ( ! $accent ) {
+			$accent = $resolve( isset( $styles['color']['text'] ) ? $styles['color']['text'] : '' );
+		}
+		// The accent also colors link text and buttons. A pale accent (Twenty Twenty-Five: yellow on
+		// white) would be unreadable, so it needs a contrast of 3:1 against the surface, else the text color.
+		if ( $accent && $vars['text'] && self::contrast( $accent, $vars['surface'] ? $vars['surface'] : '#ffffff' ) < 3 ) {
+			$accent = $vars['text'];
+		}
+		$vars['accent'] = $accent;
+		$font = isset( $styles['typography']['fontFamily'] ) ? trim( (string) $styles['typography']['fontFamily'] ) : '';
+		$vars['font']   = preg_match( '/^var\(--wp--preset--font-family--[a-z0-9-]+\)$/i', $font ) ? $font : '';
+		return $vars;
 	}
 
 	/**
@@ -172,6 +266,45 @@ class ThreeCal_Themes {
 			$luminance += $weight * $c;
 		}
 		return ( 1.05 / ( $luminance + 0.05 ) ) >= 3 ? '#ffffff' : '#0f172a';
+	}
+
+	/**
+	 * Relative luminance of a hex color (WCAG). Since 1.7.0
+	 *
+	 * @param string $color Hex color.
+	 * @return float|null
+	 */
+	private static function luminance( $color ) {
+		$hex = ltrim( (string) sanitize_hex_color( (string) $color ), '#' );
+		if ( 3 === strlen( $hex ) ) {
+			$hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+		}
+		if ( 6 !== strlen( $hex ) ) {
+			return null;
+		}
+		$luminance = 0;
+		foreach ( array( 0.2126, 0.7152, 0.0722 ) as $i => $weight ) {
+			$c          = hexdec( substr( $hex, $i * 2, 2 ) ) / 255;
+			$c          = $c <= 0.03928 ? $c / 12.92 : pow( ( $c + 0.055 ) / 1.055, 2.4 );
+			$luminance += $weight * $c;
+		}
+		return $luminance;
+	}
+
+	/**
+	 * Contrast ratio of two hex colors (WCAG), 1 when a color is invalid. Since 1.7.0
+	 *
+	 * @param string $a Hex color.
+	 * @param string $b Hex color.
+	 * @return float
+	 */
+	public static function contrast( $a, $b ) {
+		$la = self::luminance( $a );
+		$lb = self::luminance( $b );
+		if ( null === $la || null === $lb ) {
+			return 1;
+		}
+		return ( max( $la, $lb ) + 0.05 ) / ( min( $la, $lb ) + 0.05 );
 	}
 
 	/**
