@@ -2667,9 +2667,9 @@ msgid ""
 "The poster view shows the post images as large tiles, for example for \"This"
 " week at the cinema\"."
 msgstr ""
-"Ersetze 1 durch die ID der Kategorie, sie steht im Reiter Kategorien. Die "
-"Posteransicht zeigt die Beitragsbilder als große Kacheln, zum Beispiel für "
-"„Diese Woche im Kino“."
+"Ersetzen Sie 1 durch die ID der Kategorie, sie steht im Reiter Kategorien. "
+"Die Posteransicht zeigt die Beitragsbilder als große Kacheln, zum Beispiel "
+"für „Diese Woche im Kino“."
 
 #: includes/class-post-dates.php:1415
 msgid "Save Settings"

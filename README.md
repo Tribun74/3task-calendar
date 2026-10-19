@@ -61,7 +61,7 @@ Requires WordPress 6.2 and PHP 7.4.
 
 ## Changelog
 
-The full changelog is in [readme.txt](readme.txt). Latest release: **1.8.0** (17 October 2026) with search and day filter, the "Theme colors" design, highlighted categories, visitor submissions, fill-in from a website, schema check, JSON feed and Spanish, French and Italian translations.
+The full changelog is in [readme.txt](readme.txt). Latest release: **1.8.1** (19 October 2026): the location line no longer repeats the city when it is part of the location name. 1.8.0 (17 October 2026) brought search and day filter, the "Theme colors" design, highlighted categories, visitor submissions, fill-in from a website, schema check, JSON feed and Spanish, French and Italian translations.
 
 ## Pro add-on
 

@@ -4,7 +4,7 @@ Tags: event calendar, recurring events, ical, gdpr, events
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.8.0
+Stable tag: 1.8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -247,6 +247,10 @@ Please use the [WordPress.org support forum](https://wordpress.org/support/plugi
 
 == Changelog ==
 
+= 1.8.1 =
+* FIX: The location line of an event card no longer repeats the city when it is already part of the location name ("CITY 46 Bremen" instead of "CITY 46 Bremen, Bremen")
+* FIX: Formal German (Sie) translation of one block hint
+
 = 1.8.0 =
 * NEW: Search field in the calendar toolbar and in event lists ([threecal_events]). The search looks at title, description, location name and city, part of a word is enough, case does not matter (umlauts included). Results are listed grouped by day, combinable with the category filter, with "No events for …" and a reset button. Shortcode and block attribute show_search="false" hides the field
 * NEW: Day filter in the month view: a click on a day number, a day cell or "+N more" lists the events of that day under the grid, with "Events on …" and an "All events" button. The list reuses the list view
@@ -397,6 +401,9 @@ Please use the [WordPress.org support forum](https://wordpress.org/support/plugi
 * German translation included
 
 == Upgrade Notice ==
+
+= 1.8.1 =
+Small fix: the city is no longer shown twice when it is part of the location name.
 
 = 1.8.0 =
 Search and day filter: a search field in the calendar and in event lists (hide with show_search="false"), a click on a day lists its events under the month grid, day="YYYY-MM-DD" for [threecal_events], search and day in the JSON feed.

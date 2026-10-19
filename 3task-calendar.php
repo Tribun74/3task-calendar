@@ -3,7 +3,7 @@
  * Plugin Name:       3task Calendar
  * Plugin URI:        https://www.3task.de/3task-calendar-pro/
  * Description:       Event calendar without external services: recurring events, iCal subscription, categories, locations and event schema. Month and list views, German translation included.
- * Version:           1.8.0
+ * Version:           1.8.1
  * Author:            3task
  * Author URI:        https://www.3task.de
  * License:           GPL-2.0+
@@ -23,7 +23,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin constants
-define('THREECAL_VERSION', '1.8.0');
+define('THREECAL_VERSION', '1.8.1');
 define('THREECAL_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('THREECAL_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('THREECAL_PLUGIN_BASENAME', plugin_basename(__FILE__));

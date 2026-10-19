@@ -748,6 +748,27 @@ class ThreeCal_Calendar_Renderer {
     /**
      * Render single event card
      */
+    /**
+     * Whether the city adds information to the location name.
+     *
+     * "CITY 46 Bremen" already names Bremen, so the card shows the name alone;
+     * "Kino am Markt" gets ", Koblenz" appended. Case does not matter.
+     *
+     * @param object $location Location row.
+     * @return bool
+     */
+    private function city_is_extra($location) {
+        $city = trim((string) $location->city);
+        if ('' === $city) {
+            return false;
+        }
+        $name = (string) $location->name;
+        if (function_exists('mb_stripos')) {
+            return false === mb_stripos($name, $city);
+        }
+        return false === stripos($name, $city);
+    }
+
     public function render_event_card($event, $view = 'list', $categories = null) {
         $location = $event->location_id ? ThreeCal_Location::get($event->location_id) : null;
         if (null === $categories) {
@@ -836,7 +857,7 @@ class ThreeCal_Calendar_Renderer {
                     <?php if ($location) : ?>
                     <span class="threecal-event-location">
                         <?php ThreeCal_Icons::render('map-pin', 16); ?>
-                        <span><?php echo esc_html($location->name); ?><?php if ($location->city && $location->city !== $location->name) : ?>, <?php echo esc_html($location->city); ?><?php endif; ?></span>
+                        <span><?php echo esc_html($location->name); ?><?php if ($this->city_is_extra($location)) : ?>, <?php echo esc_html($location->city); ?><?php endif; ?></span>
                     </span>
                     <?php endif; ?>
                 </div>
