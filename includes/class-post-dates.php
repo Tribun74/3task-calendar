@@ -103,6 +103,7 @@ class ThreeCal_Post_Dates {
 		add_action( 'add_meta_boxes', array( $this, 'add_meta_box' ), 10, 2 );
 		add_action( 'save_post', array( $this, 'save_meta_box' ), 10, 2 );
 		add_action( 'admin_init', array( $this, 'register_columns' ) );
+		add_action( 'admin_init', array( $this, 'clear_protected_descriptions' ) );
 		add_filter( 'posts_clauses', array( $this, 'sort_by_date' ), 10, 2 );
 		add_action( 'wp_ajax_threecal_post_dates_sync', array( $this, 'ajax_sync' ) );
 
@@ -479,12 +480,45 @@ class ThreeCal_Post_Dates {
 	}
 
 	/**
+	 * Once after the update to 1.8.2: events mirrored from password protected posts
+	 * lose the description that earlier versions copied from the protected text.
+	 */
+	public function clear_protected_descriptions() {
+		if ( '1.8.2' === get_option( 'threecal_protected_cleanup' ) ) {
+			return;
+		}
+		global $wpdb;
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time cleanup after an update, no cache to keep.
+		$ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT pm.meta_value FROM {$wpdb->postmeta} pm INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id WHERE pm.meta_key = %s AND p.post_password <> ''",
+				self::META_EVENT
+			)
+		);
+		$ids = array_filter( array_map( 'absint', $ids ) );
+		if ( $ids ) {
+			$wpdb->query(
+				$wpdb->prepare(
+					'UPDATE ' . $wpdb->prefix . "threecal_events SET description = '' WHERE id IN (" . implode( ',', array_fill( 0, count( $ids ), '%d' ) ) . ')',
+					$ids
+				)
+			);
+		}
+		// phpcs:enable
+		update_option( 'threecal_protected_cleanup', '1.8.2', false );
+	}
+
+	/**
 	 * Short description from the excerpt or the start of the post.
 	 *
 	 * @param WP_Post $post Post.
 	 * @return string
 	 */
 	private static function excerpt( $post ) {
+		// A password protected post keeps its text to itself, as WordPress does with its own excerpt.
+		if ( '' !== (string) $post->post_password ) {
+			return '';
+		}
 		$text = '' !== trim( $post->post_excerpt ) ? $post->post_excerpt : strip_shortcodes( $post->post_content );
 		$text = wp_strip_all_tags( excerpt_remove_blocks( $text ) );
 		return wp_trim_words( html_entity_decode( $text, ENT_QUOTES, 'UTF-8' ), 40, '…' );

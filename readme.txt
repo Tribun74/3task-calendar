@@ -4,7 +4,7 @@ Tags: event calendar, recurring events, ical, gdpr, events
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.8.1
+Stable tag: 1.8.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -16,7 +16,7 @@ Event calendar without Google, CDN or tracking. Set dates right in your posts, r
 
 Dates can come straight from your posts. Set a date while you write, for example the cinema release of a film, a book release or a match day, and the post appears in the calendar by itself, with its title, link and image. A date you already keep in a custom field (Advanced Custom Fields, Meta Box or any other plugin) can be used without entering anything twice.
 
-**Live demo:** [watchguide.net/film-events/](https://watchguide.net/film-events/) runs the plugin with more than 200 festival dates, month and list view, partner highlighting and the event schema. A smaller demo with dates from posts: [3task.de](https://www.3task.de/wordpress-kalender-termine-im-beitrag/).
+**Live demo:** [3task.de/en/calendar-demo/](https://www.3task.de/en/calendar-demo/) shows all eleven designs with the same sample events, plus the paid add-on 3task Calendar Pro with sign-ups, opening hours and calendar import. A real site: [watchguide.net/film-events/](https://watchguide.net/film-events/) runs the free plugin with more than 200 festival dates, partner highlighting and the event schema.
 
 Visitors can add a single event to their own calendar or subscribe to the whole calendar (or one category) on their phone. Changes appear there automatically.
 
@@ -247,6 +247,9 @@ Please use the [WordPress.org support forum](https://wordpress.org/support/plugi
 
 == Changelog ==
 
+= 1.8.2 =
+* SECURITY: Events created from password protected posts ("Dates from posts") no longer copy the start of the protected text into the event description. The description stayed visible in the calendar, the JSON feed and the ICS feed. Existing events are cleaned once after the update
+
 = 1.8.1 =
 * FIX: The location line of an event card no longer repeats the city when it is already part of the location name ("CITY 46 Bremen" instead of "CITY 46 Bremen, Bremen")
 * FIX: Formal German (Sie) translation of one block hint
@@ -401,6 +404,9 @@ Please use the [WordPress.org support forum](https://wordpress.org/support/plugi
 * German translation included
 
 == Upgrade Notice ==
+
+= 1.8.2 =
+Security fix: no text from password protected posts in event descriptions. Please update.
 
 = 1.8.1 =
 Small fix: the city is no longer shown twice when it is part of the location name.
